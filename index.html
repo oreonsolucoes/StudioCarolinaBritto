@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studio Carolina Britto</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500&family=Cinzel+Decorative:wght@700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <header>
+    <h1 class="titulo">Studio Carolina Brito</h1>
+    <p class="subtitulo">✨ Sua melhor experiência em beleza começa aqui</p>
+  </header>
+
+  <main class="container">
+    <form id="bookingForm" class="form-box">
+      <div id="container-agendamentos">
+        <div class="bloco-agendamento" id="agendamento-1">
+          <h3>Seu Agendamento</h3>
+          <label>Nome</label>
+          <input type="text" class="cliente-nome" placeholder="Seu nome" required>
+
+          <label>WhatsApp</label>
+          <input type="tel" class="cliente-whatsapp" placeholder="DDD + TELEFONE" required>
+
+          <label>Serviço</label>
+          <select class="cliente-servico" required>
+            <option value="">Selecione</option>
+          </select>
+
+          <label>Data</label>
+          <input type="date" class="data-agenda" required>
+
+          <div class="secao-horarios" style="display:none;">
+            <label>Selecione o Horário</label>
+            <div class="grid-horarios"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acoes-extras">
+        
+      </div>
+
+      <button type="submit" id="btn-confirmar-tudo" class="btn-agendar" style="display:none;">Confirmar
+        Agendamento(s)</button>
+    </form>
+  </main>
+
+  <div style="text-align: center; margin: 20px 0;">
+    <button id="btn-abrir-gestao" class="btn-secundario">Reagendamento ou Desistência</button>
+  </div>
+
+  <div id="modal-gestao" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h2>Gestão de Horário</h2>
+      <p>Digite seu WhatsApp para buscar seus agendamentos:</p>
+      <input type="tel" id="busca-tel-gestao" placeholder="(00) 00000-0000">
+      <button id="btn-buscar-gestao">Buscar</button>
+
+      <div id="resultado-gestao" class="lista-gestao"></div>
+
+      <button class="btn-fechar-modal"
+        onclick="document.getElementById('modal-gestao').style.display='none'">Sair</button>
+    </div>
+  </div>
+
+  <div id="modal-sucesso" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div id="icone-sucesso">✅</div>
+      <h2 id="titulo-sucesso">Agendamento Confirmado!</h2>
+      <p id="msg-sucesso">Seu horário foi reservado com sucesso.</p>
+    </div>
+  </div>
+
+  <div id="modal-cancelamento" class="modal-overlay" style="display:none;">
+      <div class="modal-box">
+        <div style="font-size: 60px; margin-bottom: 10px;">🗑️</div>
+        <h2 style="color: #d4af37; font-family: 'Cinzel Decorative', serif;">Atendimento Descartado</h2>
+        <p style="color: #ccc; font-size: 14px;">>Seu agendamento foi excluído com sucesso.<br>Você pode se quiser, prosseguir criando um novo agendamento agora.</p>
+        
+        <button id="btn-reload-gestao" class="btn-novo-agendamento">Novo Agendamento</button>
+      </div>
+  </div>
+  <a href="admin.html" class="btn-admin" title="Painel do Barbeiro">🔒</a>
+  
+  <script type="module" src="js/app.js"></script>
+  
+</body>
+
+</html>
+
+
+
+

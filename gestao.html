@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão - Studio Carolina Britto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/gestao.css">
+</head>
+
+<body>
+    <div class="admin-container">
+        <header>
+            <h1>📊 Gestão e Relatórios</h1>
+            <button onclick="window.location.href='admin.html'" class="btn-logout">Voltar ao Painel</button>
+        </header>
+
+        <nav class="admin-nav">
+            <button id="tab-financeiro" class="active">Financeiro</button>
+            <button id="tab-historico">Histórico de Serviços</button>
+        </nav>
+
+        <div class="form-gestao"
+            style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                <div>
+                    <label style="display:block; color:var(--dourado);">Início:</label>
+                    <input type="date" id="filtro-inicio"
+                        style="padding: 8px; border-radius: 5px; border: 1px solid var(--cinza); background: #000; color: #fff;">
+                </div>
+                <div>
+                    <label style="display:block; color:var(--dourado);">Fim:</label>
+                    <input type="date" id="filtro-fim"
+                        style="padding: 8px; border-radius: 5px; border: 1px solid var(--cinza); background: #000; color: #fff;">
+                </div>
+                <button id="btn-filtrar" class="btn-save">Filtrar Dados</button>
+                <button id="btn-limpar" class="btn-delete">Limpar</button>
+            </div>
+        </div>
+
+        <section id="sec-financeiro">
+            <div id="resumo-financeiro" class="admin-card"
+                style="display:none; flex-direction: column; text-align: center; padding: 30px;">
+                <h2 id="total-valor" style="color:var(--verde); font-size: 2.5rem;">R$ 0,00</h2>
+                <p id="total-servicos">0 serviços realizados no período</p>
+            </div>
+        </section>
+
+        <section id="sec-historico" style="display:none;">
+            <div id="lista-historico" class="lista">
+                <p style="text-align:center; opacity:0.5;">Selecione as datas para buscar o histórico.</p>
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="js/gestao.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamento Confirmado - Studio Carolina Britto</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Cinzel+Decorative:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/confirmacao.css">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* Estilo para separar múltiplos agendamentos dentro da mesma box */
+        .agendamento-confirmado {
+            border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .agendamento-confirmado:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .cliente-badge {
+            display: block;
+            color: #f8f6f7;
+            font-size: 1.0rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <video class="bg-video" autoplay muted loop playsinline>
+        <source src="video.mp4" type="video/mp4">
+    </video>
+    
+    <div class="bg-overlay"></div>
+    <div class="confirm-container">
+        <div class="header-sucesso">
+            <div class="icon-check">✔️</div>
+            <h1 class="titulo">Agendamento Confirmado!</h1>
+            <p class="subtitulo">Seu horário foi reservado com sucesso.</p>
+        </div>
+
+        <div class="resumo-box" id="resumo-dinamico">
+            <h3>Detalhes da Reserva:</h3>
+            <div id="container-lista">
+                <p>Carregando detalhes...</p>
+            </div>
+        </div>
+
+        <hr class="divisor">
+
+        <section class="info-section">
+            <h3>📌 Lembretes Importantes</h3>
+            <ul>
+                <li>Caso precise remarcar <strong>avise com antecedência</strong>.</li>
+                <li>Evite atrasos para não comprometer os próximos clientes.</li>
+                <li>Ambiente climatizado com Wi-Fi e música de qualidade.</li>
+            </ul>
+        </section>
+
+        <section class="info-section highlight">
+            <h3>Importante saber 💡...</h3>
+            <p>ACada serviço possui um tempo ideal de manutenção.
+            Para manter a qualidade, durabilidade e o acabamento perfeito, indicamos a manutenção entre <strong>20 e 25 dias</strong> após o
+            atendimento.</p>
+        </section>
+
+        <section class="fidelidade">
+            <h3>🔄 Quer garantir a preferência?</h3>
+            <p>Você já pode deixar agendado seu próximo retorno para não perder seu horário favorito!</p>
+            <button onclick="window.location.href='index.html'" class="btn-retorno">Agendar Próximo Horário</button>
+        </section>
+
+        <footer>
+            <p>Studio Carolina Britto - Mais do que beleza, uma experiência</p>
+        </footer>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Lendo a lista completa salva no localStorage pelo app.js
+            const dados = localStorage.getItem('listaAgendamentos');
+            const container = document.getElementById('container-lista');
+
+            if (dados) {
+                const agendamentos = JSON.parse(dados);
+                container.innerHTML = ""; // Limpa o carregando
+
+                agendamentos.forEach((ag, index) => {
+                    const label = agendamentos.length > 1 ? `Agendamento ${index + 1}` : "Confirmado";
+
+                    const htmlAg = `
+                        <div class="agendamento-confirmado">
+                            <span class="cliente-badge">${label}: ${ag.cliente}</span>
+                            <div class="resumo-item">
+                                <span>Serviço:</span>
+                                <strong>${ag.servico}</strong>
+                            </div>
+                            <div class="resumo-item">
+                                <span>Data:</span>
+                                <strong>${ag.data}</strong>
+                            </div>
+                            <div class="resumo-item">
+                                <span>Horário:</span>
+                                <strong>${ag.hora}</strong>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += htmlAg;
+                });
+            } else {
+                container.innerHTML = "<p>Dados não encontrados. Por favor, fale com o barbeiro.</p>";
+            }
+        });
+    </script>
+</body>
+
+</html>
+

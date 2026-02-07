@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Studio - Carolina Britto</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500&family=Cinzel+Decorative:wght@700&display=swap"
+      rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  </head>
+
+  <body>
+
+    <div id="login-section" class="login-container" style="display:none;">
+      <h1 class="titulo">Barbearia SF</h1>
+      <p class="subtitulo">Painel do Barbeiro</p>
+
+      <form id="login-form" class="login-box">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" placeholder="admin@gmail.com" required>
+        <label for="senha">Senha</label>
+        <div class="senha-wrapper">
+          <input type="password" id="senha" placeholder="••••••••" required>
+          <span id="toggle-senha">👁️</span>
+        </div>
+
+        <button type="submit" class="btn-login">Entrar</button>
+        <p id="erro-login" class="erro"></p>
+      </form>
+    </div>
+
+    <div id="admin-section" class="admin-container" style="display:none;">
+      <header>
+        <h1>Painel Administrativo</h1>
+        <div>
+          <button onclick="window.location.href='gestao.html'" class="btn-edit-ordem"
+            style="margin-right:10px; background:#3498db; color:white;">📊 Gestão</button>
+          <button id="logout" class="btn-logout">Sair</button>
+        </div>
+      </header>
+
+      <nav class="admin-nav">
+        <button id="btn-agendamentos" class="active">Agendamentos</button>
+        <button id="btn-bloqueio">Bloquear Horários</button>
+        <button id="btn-agendar-manual">Agendar Cliente</button>
+        <button id="btn-servicos">Serviços</button>
+        <button id="btn-recesso">Folga</button>
+      </nav>
+
+      <section id="sec-bloqueio" style="display:none;">
+        <h2>🔒 Gestão de Disponibilidade</h2>
+        <p style="margin-bottom: 15px; opacity: 0.8;">Clique no horário para ocupar/bloquear (Almoço, Folga, etc.)</p>
+        <div id="grade-bloqueio" class="grade-horarios"></div>
+      </section>
+
+      <section id="sec-agendamentos">
+        <h2>📅 Agendamentos</h2>
+        <div class="admin-toolbar">
+          <div class="filter-group">
+            <label for="filtro-data">Data:</label>
+            <input type="date" id="filtro-data">
+          </div>
+          <div class="filter-group">
+            <input type="text" id="pesquisa-cliente" placeholder="🔍 Buscar nome ou telefone...">
+          </div>
+          <div class="switch-container">
+            <span>Ocultar horários passados</span>
+            <label class="switch">
+              <input type="checkbox" id="toggle-passados" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div id="lista-agendamentos" class="lista"></div>
+      </section>
+
+      <section id="sec-agendar-manual" style="display:none;">
+            <div class="manual-wrapper">
+              <h2>✍️ Agendamento Manual</h2>
+              <div id="form-agendamento-manual"></div>
+                  <div class="form-agendamento-manual">
+                    <input type="text" id="manual-nome" placeholder="Nome do Cliente" required>
+                    <input type="tel" id="manual-whatsapp" value="5511900000000" placeholder="WhatsApp (somente números)" required>
+                  
+                    <div class="custom-select manual-select" id="manual-servico-select">
+                      <div class="custom-select-trigger">
+                        ✂️ Selecione o serviço
+                        <span class="arrow">▾</span>
+                      </div>
+                      <div class="custom-options" id="manual-servico-options"></div>
+                    </div>
+
+                  
+                    <div class="custom-select manual-select" id="manual-pagamento-select" data-valor="digital">
+                      <div class="custom-select-trigger">
+                        💳 Pagamento Digital
+                        <span class="arrow">▾</span>
+                      </div>
+                      <div class="custom-options">
+                        <div class="custom-option" data-value="digital">Pagamento Digital</div>
+                        <div class="custom-option" data-value="dinheiro">Pagamento em Dinheiro</div>
+                        <div class="custom-option" data-value="pendente">Pendente</div>
+                      </div>
+                  </div>
+
+                
+                  <input type="date" id="manual-data" required>
+                
+              </div>
+            </div> 
+              <div style="margin-top:20px;">
+                <label style="color:#d4af37;">Selecione o Horário</label>
+                <div id="manual-grid-horarios" class="grade-horarios"></div>
+              </div>
+              
+              <button id="btn-salvar-agendamento-manual" class="btn-save" style="margin-top:20px;">
+                Salvar Agendamento
+              </button>
+
+      </section>
+
+
+      <section id="sec-servicos" style="display:none;">
+        <h2>💈 Serviços</h2>
+        <form id="form-servico" class="form-servico">
+          <input type="text" id="serv-nome" placeholder="Nome do serviço" required>
+          <input type="number" id="serv-preco" placeholder="Preço (R$)" required>
+          <input type="number" id="serv-duracao" placeholder="Duração (min)" required>
+          <input type="number" id="serv-ordem" placeholder="Ordem (Ex: 1)" required>
+          <button type="submit" class="btn-save">Salvar Serviço</button>
+        </form>
+        <div id="lista-servicos" class="lista"></div>
+      </section>
+
+      <section id="sec-recesso" style="display:none;">
+        <h2 style="color:#d4af37;">🏝️ Configurar Folga/Feriado</h2>
+        <div class="admin-toolbar" style="display:block;">
+          <p style="margin-bottom:15px; font-size:14px; color:#ccc;">
+            Defina um período em que a barbearia estará fechada. O cliente verá um aviso e não conseguirá agendar.
+          </p>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+            <div class="filter-group">
+              <label>Data Início:</label>
+              <input type="date" id="recesso-inicio">
+            </div>
+            <div class="filter-group">
+              <label>Data Fim:</label>
+              <input type="date" id="recesso-fim">
+            </div>
+            <button id="btn-salvar-recesso" class="btn-save" style="height:46px;">Ativar Folga/Feriado</button>
+          </div>
+
+          <div id="status-recesso-box"
+            style="margin-top:25px; padding:15px; border-radius:10px; background:rgba(212,175,55,0.15); border:1px solid #d4af37; display:none;">
+            <p id="texto-status-recesso" style="margin-bottom:10px; color:#fff; font-weight:bold;"></p>
+            <button id="btn-remover-recesso" class="btn-delete">Remover Folga/Feriado e Abrir Agenda</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div id="custom-confirm" class="confirm-overlay" style="display:none;">
+      <div class="confirm-box">
+        <h3 id="confirm-title">Confirmar Ação</h3>
+        <p id="confirm-msg">Deseja realizar esta operação?</p>
+        <div class="confirm-details">
+          <p><strong>Data:</strong> <span id="confirm-date">--/--/----</span></p>
+          <p><strong>Serviço:</strong> <span id="confirm-service">---</span></p>
+        </div>
+        <div class="confirm-btns">
+          <button id="confirm-yes" class="btn-confirm btn-yes">Sim</button>
+          <button id="confirm-no" class="btn-confirm btn-no">Não</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-notificacao" class="modal-notificacao" style="display:none;">
+      <div class="modal-content">
+        <h3>🔔 Novo Agendamento!</h3>
+        <div class="notificacao-corpo">
+          <p><strong>Cliente:</strong> <span id="notif-cliente">---</span></p>
+          <p><strong>Serviço:</strong> <span id="notif-servico">---</span></p>
+          <p><strong>Data:</strong> <span id="notif-data">---</span></p>
+          <p><strong>Horário:</strong> <span id="notif-hora">---</span></p>
+        </div>
+        <button class="btn-login" onclick="this.closest('.modal-notificacao').style.display='none'">Confirmar
+          Leitura</button>
+      </div>
+    </div>
+
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/admin.js"></script>
+  </body>
+</html>
+
