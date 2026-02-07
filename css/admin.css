@@ -1,0 +1,658 @@
+/* ---------------------------------------------------------
+   PAINEL DO BARBEIRO - BARBEARIA SF (ESTILO CONSOLIDADO)
+-----------------------------------------------------------*/
+
+#login-section,
+#admin-section {
+  display: none;
+}
+
+:root {
+  --preto: #0d0d0d;
+  --cinza: #2e2e2e;
+  --dourado: #f701ea;
+  --branco: #f5f5f5;
+  --vermelho: #e63946;
+  --verde: #2ecc71;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--branco);
+  background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)),
+    url('https://plus.unsplash.com/premium_photo-1661337159345-bc2e2e014c49?q=80&w=870&auto=format');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* --- ELEMENTOS DE TEXTO --- */
+.titulo {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 2rem;
+  color: var(--dourado);
+  margin-bottom: 5px;
+}
+
+.subtitulo {
+  font-size: 1rem;
+  opacity: 0.8;
+  margin-bottom: 25px;
+}
+
+/* --- LOGIN --- */
+.login-container {
+  background: rgba(13, 13, 13, 0.95);
+  border: 1px solid var(--dourado);
+  padding: 40px 30px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.login-box label {
+  color: var(--dourado);
+  margin-bottom: 5px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  display: block;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: white;
+  margin-bottom: 15px;
+  outline: none;
+}
+
+.login-box input:focus {
+  border-color: var(--dourado);
+}
+
+.senha-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+#toggle-senha {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 10;
+  font-size: 1.2rem;
+  padding: 5px;
+}
+
+.btn-login {
+  background: var(--dourado);
+  color: var(--preto);
+  padding: 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-login:hover {
+  filter: brightness(1.2);
+}
+
+/* --- PAINEL ADMIN (ESTRUTURA PRINCIPAL) --- */
+.admin-container {
+  width: 100%;
+  max-width: 900px;
+  background: rgba(13, 13, 13, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 15px;
+}
+
+header h1 {
+  font-family: 'Cinzel Decorative', serif;
+  color: var(--dourado);
+  font-size: 1.5rem;
+}
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid var(--dourado);
+  color: var(--dourado);
+  padding: 6px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.admin-nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.admin-nav button {
+  background: transparent;
+  color: var(--dourado);
+  border: 1px solid var(--dourado);
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.admin-nav button.active {
+  background: var(--dourado);
+  color: #ccc;
+}
+
+/* --- CARDS E LISTAS --- */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.admin-card,
+.servico-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: left;
+  background: var(--cinza);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 15px 20px;
+  border-radius: 8px;
+}
+
+.btns-card {
+  display: flex;
+  gap: 10px;
+}
+
+
+.btn-delete,
+.btn-edit-serv,
+.btn-del-serv {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+}
+
+.btn-whatsapp {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  background: var(--verde);
+  display: flex;
+  align-items: center;
+    /* Centraliza verticalmente */
+  justify-content: center;
+    /* Centraliza horizontalmente */
+}
+
+.btn-delete,
+.btn-del-serv {
+  background: var(--vermelho);
+}
+
+.btn-edit-serv {
+  background: var(--dourado);
+  color: var(--preto);
+}
+
+/* --- FORMULÁRIOS E FERRAMENTAS --- */
+.form-servico {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 10px;
+  margin-bottom: 25px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 8px;
+  align-items: end;
+}
+
+.form-servico input {
+  padding: 10px;
+  background: var(--preto);
+  border: 1px solid var(--cinza);
+  color: white;
+  border-radius: 5px;
+}
+
+.btn-save {
+  background: var(--verde);
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+  border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  color: var(--dourado);
+}
+
+.filter-group input {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--cinza);
+  background: var(--preto);
+  color: white;
+  outline: none;
+}
+
+/* --- GRADE DE HORÁRIOS --- */
+.grade-horarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-hora {
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--dourado);
+  background: transparent;
+  color: var(--dourado);
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-hora.livre:hover {
+  background: var(--dourado);
+  color: var(--preto);
+}
+
+.btn-hora.ocupado {
+  background: #333;
+  border-color: #444;
+  color: #666;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.btn-hora.bloqueado-red {
+  background: var(--vermelho) !important;
+  color: white !important;
+  border-color: #b91c1c !important;
+  text-decoration: none !important;
+}
+
+.admin-card.bloqueado {
+  border-left: 5px solid #e67e22;
+  background: rgba(230, 126, 34, 0.05);
+}
+
+/* --- MODAIS (NOTIFICAÇÃO E CONFIRMAÇÃO) --- */
+.modal-notificacao,
+.confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  /* Escurecido para foco total */
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  /* Prioridade máxima */
+}
+
+.modal-content,
+.confirm-box {
+  background: var(--preto);
+  padding: 35px;
+  border-radius: 15px;
+  text-align: center;
+  border: 2px solid var(--dourado);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.4);
+  max-width: 400px;
+  width: 90%;
+  color: var(--branco);
+}
+
+.notificacao-corpo,
+.confirm-details {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.notificacao-corpo p,
+.confirm-details p {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.notificacao-corpo strong,
+.confirm-details strong {
+  color: var(--dourado);
+}
+
+.confirm-btns {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-confirm {
+  padding: 12px 25px;
+  border-radius: 6px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  flex: 1;
+}
+
+.btn-yes {
+  background: var(--dourado);
+  color: var(--preto);
+}
+
+.btn-no {
+  background: transparent;
+  border: 1px solid #555;
+  color: #ccc;
+}
+
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 768px) {
+  .form-servico {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .admin-card,
+  .servico-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .btns-card {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Container da Chave */
+.switch-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  margin: 15px 0;
+  font-size: 14px;
+  color: #fff;
+}
+
+/* A chave em si */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #555;
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider { background-color: #d4af37; }
+input:checked + .slider:before { transform: translateX(20px); }
+
+
+.select-pagamento {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--preto);
+  color: white;
+  border: 1px solid var(--dourado);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.select-pagamento:focus {
+  outline: none;
+  border-color: var(--verde);
+}
+
+/* --- SELECT CUSTOMIZADO --- */
+.custom-select {
+  position: relative;
+  min-width: 160px;
+  font-size: 0.8rem;
+  user-select: none;
+  display: flex;
+  align-items: center;
+      /* Centraliza verticalmente */
+  justify-content: center;
+      /* Centraliza horizontalmente */
+}
+
+.custom-select-trigger {
+  background: var(--preto);
+  border: 1px solid var(--dourado);
+  color: var(--branco);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.3s;
+}
+
+.custom-select-trigger:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.custom-select.open .custom-select-trigger {
+  border-color: var(--verde);
+}
+
+.custom-select .arrow {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.custom-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: var(--preto);
+  border: 1px solid var(--dourado);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+  display: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.custom-select.open .custom-options {
+  display: block;
+}
+
+.custom-option {
+  padding: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.custom-option:hover {
+  background: var(--dourado);
+  color: var(--preto);
+}
+
+/* ===== FORMULÁRIO AGENDAMENTO MANUAL ===== */
+.form-agendamento-manual {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.form-agendamento-manual input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: #111;
+  color: #fff;
+  font-size: 14px;
+
+}
+
+.form-agendamento-manual input:focus {
+  outline: none;
+  border-color: #d4af37;
+
+}
+
+/* ================================
+   CENTRALIZAÇÃO – AGENDAMENTO MANUAL
+================================ */
+
+.manual-wrapper {
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+  /* CENTRALIZA HORIZONTAL */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* força layout em coluna */
+.manual-form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 15px;
+}
+
+/* inputs e selects 100% */
+.manual-form input,
+.manual-form .custom-select {
+  width: 100%;
+}
+
+/* bloco de horários centralizado */
+.manual-horarios {
+  text-align: center;
+}
+
+.manual-horarios label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--dourado);
+  font-size: 0.9rem;
+}
+
+/* botão central */
+#btn-salvar-agendamento-manual {
+  width: 100%;
+}

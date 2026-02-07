@@ -1,0 +1,171 @@
+/* ------------------------------
+   ESTILOS ESPECÍFICOS PARA GESTÃO
+--------------------------------*/
+
+/* Importa as variáveis do admin caso não estejam carregadas */
+:root {
+    --dourado: #d4af37;
+    --preto-claro: #1a1a1a;
+    --branco: #ffffff;
+}
+
+/* Container de Filtros */
+.form-gestao {
+    background: rgba(255, 255, 255, 0.08) !important;
+    /* Fundo levemente mais claro que o admin */
+    border: 1px solid var(--dourado);
+    padding: 25px;
+    border-radius: 12px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 30px;
+}
+
+.campo-data {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.campo-data label {
+    color: var(--dourado);
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+/* --- O SEGREDO DO CALENDÁRIO VISÍVEL --- */
+input[type="date"] {
+    background-color: var(--preto-claro);
+    border: 1px solid #444;
+    color: var(--branco) !important;
+    /* Texto branco */
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+input[type="date"]:focus {
+    border-color: var(--dourado);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+}
+
+/* FORÇA O ÍCONE DO CALENDÁRIO A FICAR BRANCO/DOURADO */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    /* Inverte o preto para branco */
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    background-color: rgba(212, 175, 55, 0.2);
+}
+
+/* Estilo para os botões da gestão */
+.btns-gestao {
+    display: flex;
+    gap: 10px;
+}
+
+/* Card de Resultado Financeiro mais chamativo */
+.resultado-card {
+    background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+    border-left: 5px solid var(--dourado);
+    padding: 30px;
+    border-radius: 10px;
+    margin-top: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+#total-valor {
+    font-family: 'Cinzel Decorative', serif;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+}
+
+#btn-filtrar,
+#btn-limpar {
+    min-width: 120px;
+    /* Garante que ambos tenham no mínimo esse tamanho */
+    height: 45px;
+    /* Garante que a altura seja idêntica */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- DEFINIÇÃO DAS ANIMAÇÕES --- */
+
+/* Fade de baixo para cima (mais elegante) */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fade simples */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* --- APLICAÇÃO NAS SEÇÕES --- */
+
+/* Faz o container principal aparecer suavemente ao abrir a página */
+.admin-container {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Faz os cards de agendamento e resultados aparecerem com fade quando surgirem */
+.admin-card,
+.resultado-card {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Classe utilitária para aplicar via JavaScript se necessário */
+.efeito-fade {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.btn-save,
+.btn-delete,
+.btn-logout,
+input[type="date"] {
+    transition: all 0.3s ease;
+    /* Faz qualquer mudança levar 0.3 segundos */
+}
+
+.btn-save:hover {
+    transform: scale(1.02);
+    /* Aumenta levemente */
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+    /* Brilha verde */
+}
+
+.btn-delete:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(230, 57, 70, 0.4);
+    /* Brilha vermelho */
+}

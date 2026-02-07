@@ -1,0 +1,391 @@
+/* ------------------------------
+    ESTILO GERAL - BARBEARIA SF
+--------------------------------*/
+:root {
+  --preto: #0d0d0d;
+  --cinza: #2e2e2e;
+  --dourado: #f035d7;
+  --branco: #f5f5f5;
+  --vermelho: #c0392b;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--branco);
+  background: linear-gradient(rgba(255, 253, 253, 0.001), rgba(255, 255, 255, 0.001)),
+    url('https://plus.unsplash.com/premium_photo-1661337159345-bc2e2e014c49?q=80&w=870&auto=format');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 40px 15px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: -1;
+}
+
+/* CABEÇALHO E BOTÕES DE TOPO */
+header {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.titulo {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 3rem;
+  color: var(--dourado);
+  letter-spacing: 3px;
+}
+
+.subtitulo {
+  font-size: 1.2rem;
+  color: var(--branco);
+  opacity: 0.85;
+  margin-bottom: 15px;
+}
+
+.btn-secundario {
+  background: transparent;
+  border: 1px solid var(--dourado);
+  color: var(--dourado);
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.3s;
+}
+
+.btn-secundario:hover {
+  background: var(--dourado);
+  color: var(--preto);
+}
+
+/* CONTAINER E BLOCOS */
+.container {
+  background: rgba(172, 130, 130, 0.247);
+  border: 1px solid rgba(255, 0, 242, 0.3);
+  border-radius: 10px;
+  padding: 30px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.bloco-agendamento {
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.bloco-agendamento h3 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--dourado);
+  padding-left: 10px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  margin-top: 15px;
+  font-weight: 500;
+  color: var(--dourado);
+}
+
+input,
+select {
+  width: 100%;
+  margin-top: 5px;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  background: var(--cinza);
+  color: var(--branco);
+}
+
+input:focus,
+select:focus {
+  border: 1px solid var(--dourado);
+  background: #1a1a1a;
+}
+
+/* HORÁRIOS / BOTÕES */
+.grid-horarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.horario {
+  background: var(--cinza);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 8px 0;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 0.9rem;
+}
+
+.horario:hover,
+.horario.active {
+  background: var(--dourado);
+  color: var(--preto);
+  font-weight: bold;
+}
+
+.horario.indisponivel {
+  background: #222;
+  color: #555;
+  cursor: not-allowed;
+  border-color: transparent;
+}
+
+.btn-extra {
+  background: transparent;
+  color: var(--branco);
+  border: 1px dashed var(--dourado);
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.btn-agendar {
+  margin-top: 25px;
+  width: 100%;
+  padding: 12px;
+  background: var(--dourado);
+  border: none;
+  border-radius: 6px;
+  color: var(--preto);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-agendar:hover {
+  background: #e0c157;
+  transform: translateY(-2px);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+/* MODAIS E GESTÃO */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center; /* Centraliza horizontal */
+    align-items: center;     /* Centraliza vertical */
+    z-index: 10000;
+}
+
+.modal-box {
+    background: #1a1a1a;
+    border: 1px solid #d4af37;
+    padding: 30px;
+    width: 320px;        /* Largura fixa de card */
+    min-height: 320px;   /* Altura para ser quadrado */
+    border-radius: 15px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes popupSurgir {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Botão dentro do Card */
+.btn-novo-agendamento {
+    background: #d4af37;
+    color: #000;
+    border: none;
+    padding: 15px 20px;
+    width: 100%;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 25px;
+    text-transform: uppercase;
+    transition: 0.3s;
+}
+
+.btn-novo-agendamento:hover {
+    filter: brightness(1.2);
+}
+
+.lista-gestao {
+  margin: 20px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.item-gestao {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  text-align: left;
+  border-left: 4px solid var(--dourado);
+}
+
+.acoes-gestao {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-reagendar {
+  background: var(--dourado) !important;
+  color: var(--preto) !important;
+  flex: 1;
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-desistir {
+  background: var(--vermelho) !important;
+  color: white !important;
+  flex: 1;
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-reagendar:hover {
+  background: #e0c157 !important;
+}
+
+.btn-desistir:hover {
+  opacity: 0.8;
+}
+
+/* ADMIN E RESPONSIVIDADE */
+.btn-admin {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--dourado);
+  padding: 10px 13px;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+@media (max-width: 768px) {
+  .titulo {
+    font-size: 2.2rem;
+  }
+
+  .container {
+    padding: 20px;
+  }
+
+  .grid-horarios {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Estilo para os botões Buscar e Sair dentro do Modal */
+#btn-buscar-gestao,
+.btn-fechar-modal {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  background: var(--dourado);
+  color: var(--preto);
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#btn-buscar-gestao:hover,
+.btn-fechar-modal:hover {
+  background: #e0c157;
+  transform: translateY(-2px);
+}
+
+/* Estilo específico para o botão Sair ser um pouco mais discreto se quiser */
+.btn-fechar-modal {
+  background: transparent;
+  border: 1px solid var(--dourado);
+  color: var(--dourado);
+  margin-top: 10px;
+}
+
+.btn-fechar-modal:hover {
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--dourado);
+}
+
+/* Ajuste no input do modal para não ficar colado nos botões */
+#modal-gestao input {
+  margin-bottom: 5px;
+}
+
+/* Garante que o conteúdo do modal esteja empilhado corretamente */
+.modal-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.icon-cancel {
+  font-size: 50px;
+  margin-bottom: 15px;
+}
+
+#modal-cancelamento .modal-content {
+  text-align: center;
+  border-top: 5px solid #d4af37; /* Cor dourada da barbearia */
+}
+
+.btn-prosseguir {
+  background-color: #d4af37;
+  color: #000;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+}
