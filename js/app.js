@@ -22,6 +22,7 @@ const modalGestao = document.getElementById('modal-gestao');
 const btnAbrirGestao = document.getElementById('btn-abrir-gestao');
 const btnBuscarGestao = document.getElementById('btn-buscar-gestao');
 const modalSucesso = document.getElementById('modal-sucesso');
+const INTERVALO_MINUTOS = 10;
 
 let horariosFuncionamento = {};
 let servicosDisponiveis = {};
@@ -197,7 +198,7 @@ async function gerarHorarios(bloco) {
     const ags = Object.values(snapshot.val() || {}).filter(a => a.data === dataAg);
     grid.innerHTML = "";
 
-    for (let t = paraMinutos(config.inicio); t <= paraMinutos(config.fim); t += 20) {
+    for (let t = paraMinutos(config.inicio); t <= paraMinutos(config.fim); t += INTERVALO_MINUTOS) {
       
       // REGRA 1: Verificar se o horário já passou (apenas para o dia de hoje)
       // Adicionamos uma margem de segurança (ex: 5 minutos) se quiser, ou t < minutosAgora direto
@@ -210,7 +211,7 @@ async function gerarHorarios(bloco) {
       // REGRA 2: Verificar conflito com agendamentos existentes
       const conflito = ags.some(a => {
         const inicioAg = paraMinutos(a.hora);
-        const duracaoAg = Number(a.duracao) || 20;
+        const duracaoAg = Number(a.duracao) || INTERVALO_MINUTOS;
         const fimAg = inicioAg + duracaoAg;
         return t < fimAg && fimN > inicioAg;
       });
