@@ -25,6 +25,7 @@ const listaServicos = document.getElementById("lista-servicos");
 const btnTabManual = document.getElementById('btn-agendar-manual');
 const formServico = document.getElementById('form-servico');
 const gradeBloqueio = document.getElementById('grade-bloqueio');
+const INTERVALO_MINUTOS = 10;
 
 
 // --- SISTEMA DE ÁUDIO E DESBLOQUEIO ---
@@ -216,7 +217,7 @@ function gerarGradeBloqueio() {
       const dataBR = dataSelecionada.split('-').reverse().join('/');
 
       for (let h = parseInt(config.inicio); h < parseInt(config.fim); h++) {
-        for (let m = 0; m < 60; m += 20) {
+        for (let m = 0; m < 60; m += INTERVALO_MINUTOS) {
           const horaFormatada = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
           const agId = Object.keys(agendados).find(id => agendados[id].data === dataSelecionada && agendados[id].hora === horaFormatada);
           const ocupado = !!agId;
@@ -235,7 +236,7 @@ function gerarGradeBloqueio() {
                   hora: horaFormatada,
                   whatsapp: "00000000000",
                   servico: "Bloqueio Manual",
-                  duracao: 20 // <--- ADICIONADO PARA CORRIGIR O PROBLEMA NO APP.JS
+                  duracao: INTERVALO_MINUTOS // <--- ADICIONADO PARA CORRIGIR O PROBLEMA NO APP.JS
                 });
               });
             } else if (ehBloqueio) {
@@ -445,15 +446,15 @@ function gerarHorariosManuais() {
 
     manualGrid.innerHTML = "";
 
-    for (let t = 0; t < 24 * 60; t += 20) {
+    for (let t = 0; t < 24 * 60; t += INTERVALO_MINUTOS) {
       const h = String(Math.floor(t / 60)).padStart(2, '0');
       const m = String(t % 60).padStart(2, '0');
       const horaStr = `${h}:${m}`;
 
       const conflito = ags.some(a => {
         const ini = paraMinutos(a.hora);
-        const dur = Number(a.duracao) || 20;
-        return t < (ini + dur) && (t + 20) > ini;
+        const dur = Number(a.duracao) || INTERVALO_MINUTOS;
+        return t < (ini + dur) && (t + INTERVALO_MINUTOS) > ini;
       });
 
       const div = document.createElement('button');
