@@ -118,7 +118,7 @@ function exibirModalNovoAgendamento(ag) {
 
   setTimeout(() => {
     modal.style.display = 'none';
-  }, 60000);
+  }, 120000);
 }
 
 
