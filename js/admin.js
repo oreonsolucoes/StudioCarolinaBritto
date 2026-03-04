@@ -372,8 +372,10 @@ function gerarGradeBloqueio() {
       gradeBloqueio.innerHTML = "";
       const dataBR = dataSelecionada.split('-').reverse().join('/');
 
-      for (let h = parseInt(config.inicio); h < parseInt(config.fim); h++) {
+      for (let h = parseInt(config.inicio); h <= parseInt(config.fim); h++) {
         for (let m = 0; m < 60; m += 10) {
+          // Trava para não passar do horário final exato (ex: não mostrar 20:10 se o fim for 20:00)  
+          if (h === parseInt(config.fim) && m > 0) break;
           const horaFormatada = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
           const agId = Object.keys(agendados).find(id => agendados[id].data === dataSelecionada && agendados[id].hora === horaFormatada);
           const ocupado = !!agId;
