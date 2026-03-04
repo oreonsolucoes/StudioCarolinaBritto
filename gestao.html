@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Unificada - Studio Carolina Britto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/gestao.css">
+    <style>
+        :root {
+        --preto: #0d0d0d;
+        --cinza: #2e2e2e;
+        --amarelo: #d4af37;
+        --branco: #f5f5f5;
+        --vermelho: #e63946;
+        --verde: #2ecc71;
+        }
+        #container-filtro-pagamento {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .custom-option {
+            padding: 8px 15px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #d4af37;
+            border: 1px solid #444;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+
+        .custom-option.selected {
+            background: var(--amarelo);
+            color: #ffffff;
+            border-color: var(--amarelo);
+            font-weight: bold;
+        }
+
+        .custom-option:hover:not(.selected) {
+            border-color: var(--amarelo);
+            background: rgba(255, 202, 40, 0.1);
+            color: #ffffff;
+        }
+    </style>
+</head>
+
+<body id="gestao-body" style="display: none;">
+    <div class="admin-container">
+        <header>
+            <h1>📊 Gestão e Relatórios</h1>
+            <button onclick="window.location.href='admin.html'" class="btn-logout">Voltar ao Painel</button>
+        </header>
+
+        <div class="form-gestao"
+            style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div>
+                    <label
+                        style="display:block; color:var(--dourado); margin-bottom: 5px; font-size: 14px;">Início:</label>
+                    <input type="date" id="filtro-inicio"
+                        style="padding: 8px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff;">
+                </div>
+                <div>
+                    <label
+                        style="display:block; color:var(--dourado); margin-bottom: 5px; font-size: 14px;">Fim:</label>
+                    <input type="date" id="filtro-fim"
+                        style="padding: 8px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff;">
+                </div>
+
+                <div style="flex-grow: 1;">
+                    <label style="display:block; color:var(--dourado); margin-bottom: 5px; font-size: 14px;">Método de
+                        Pagamento:</label>
+                    <div id="container-filtro-pagamento">
+                        <div class="custom-option selected" data-value="todos">Todos</div>
+                        <div class="custom-option" data-value="digital">Digital</div>
+                        <div class="custom-option" data-value="dinheiro">Dinheiro</div>
+                        <div class="custom-option" data-value="pendente">Pendente</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-filtrar" class="btn-save">Filtrar Dados</button>
+                    <button id="btn-limpar" class="btn-delete">Limpar</button>
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <div id="resumo-financeiro" class="admin-card"
+                style="display:none; flex-direction: column; text-align: center; padding: 30px; margin-bottom: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);">
+                <h2 id="total-valor" style="color:var(--verde); font-size: 3rem; margin: 0; font-weight: 700;">R$ 0,00
+                </h2>
+                <p id="total-servicos" style="opacity: 0.7; margin-top: 5px; font-size: 16px;">0 registros encontrados
+                </p>
+            </div>
+
+            <div id="lista-historico" class="lista">
+                <p style="text-align:center; opacity:0.5; padding: 40px;">Selecione o período e o método para buscar os
+                    dados.</p>
+            </div>
+        </main>
+    </div>
+    <div id="modal-confirmar-pagamento" class="confirm-overlay"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
+        <div class="confirm-box"
+            style="background:#1a1a1a; padding:20px; border-radius:10px; border:1px solid #d4af37; width:90%; max-width:400px; text-align:center;">
+            <h3 style="color:#d4af37; margin-bottom:15px;">💰 Confirmar Pagamento</h3>
+            <p id="msg-pagamento" style="color:#fff; margin-bottom:20px;">Deseja confirmar o pagamento do cliente:
+                <br><strong id="nome-cliente-confirm"></strong>?</p>
+    
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="btn-pago-digital"
+                    style="background:#4db8ff; color:white; border:none; padding:12px; border-radius:5px; cursor:pointer; font-weight:bold;">Confirmar
+                    como DIGITAL (Pix/Cartão)</button>
+                <button id="btn-pago-dinheiro"
+                    style="background:#2ecc71; color:white; border:none; padding:12px; border-radius:5px; cursor:pointer; font-weight:bold;">Confirmar
+                    como DINHEIRO</button>
+                <button id="btn-cancelar-pagamento"
+                    style="background:transparent; color:#888; border:none; padding:10px; cursor:pointer;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/gestao.js"></script>
+</body>
+
+</html>

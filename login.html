@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Studio Carolina Britto</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500&family=Cinzel+Decorative:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div id="login-section" class="login-container">
+        <h1 class="titulo">Studio Carolina Britto</h1>
+        <p class="subtitulo">Painel do Studio</p>
+
+        <form id="login-form" class="login-box">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" placeholder="admin@gmail.com" required>
+
+            <label for="senha">Senha</label>
+            <div class="senha-wrapper">
+                <input type="password" id="senha" placeholder="••••••••" required>
+                <span id="toggle-senha" style="cursor:pointer;">👁️</span>
+            </div>
+
+            <button type="submit" class="btn-login">Entrar</button>
+            <p id="erro-login" class="erro" style="color:#ff4444; text-align:center; margin-top:10px;"></p>
+        </form>
+    </div>
+
+    <script type="module" src="js/auth.js"></script>
+</body>
+
+</html>
