@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSipc3lVUGF-gTs5ktrU9G060GQ0liCBM",
@@ -305,6 +305,11 @@ function mostrarModalBloqueado() {
 // --- 4 FINALIZAR AGENDAMENTOS ---
 btnConfirmarTudo.onclick = async (e) => {
   e.preventDefault();
+  // 1. BLOQUEIO CONTRA CLIQUE DUPLO
+  if (btnConfirmarTudo.disabled) return; 
+  btnConfirmarTudo.disabled = true;
+  btnConfirmarTudo.innerText = "Processando...";
+  
   e.stopPropagation(); // 🔒 trava qualquer outro evento
 
   const blocos = document.querySelectorAll('.bloco-agendamento');
@@ -368,16 +373,26 @@ btnConfirmarTudo.onclick = async (e) => {
 
   localStorage.setItem('listaAgendamentos', JSON.stringify(agendamentosParaSubir));
 
+  // --- TRECHO ALTERADO ---
   for (let ag of agendamentosParaSubir) {
+    // 1. Gera uma referência vazia para pegar o ID gerado pelo Firebase
+    const novaRef = push(ref(db, 'agendamentos'));
+    const firebaseId = novaRef.key;
+
     const agParaFirebase = {
       ...ag,
+      id: firebaseId, // <--- ID INJETADO AQUI
       data: ag.data.split('/').reverse().join('-'),
       notificado: false
     };
 
-    await push(ref(db, 'agendamentos'), agParaFirebase);
+    // 2. Salva no Firebase usando a referência que já tem o ID
+    await set(novaRef, agParaFirebase);
+    
+    // 3. Envia para o Webhook (agora com o ID incluído no JSON)
     await enviarParaWebhook(agParaFirebase);
   }
+  // --- FIM DO TRECHO ALTERADO ---
 
   mostrarFeedback();
 };
