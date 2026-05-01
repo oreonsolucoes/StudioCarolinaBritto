@@ -29,6 +29,7 @@
         <button id="btn-bloqueio">Bloquear Horários</button>
         <button id="btn-agendar-manual">Agendar Cliente</button>
         <button id="btn-servicos">Serviços</button>
+        <button id="btn-horarios">🕐 Horários</button>
         <button id="btn-recesso">Folga</button>
         <button id="btn-clientes-bloq">Clientes Bloqueados</button>
       </nav>
@@ -116,6 +117,23 @@
           <button type="submit" class="btn-save">Salvar Serviço</button>
         </form>
         <div id="lista-servicos" class="lista"></div>
+      </section>
+
+      <section id="sec-horarios" style="display:none;">
+        <h2>🕐 Horários de Atendimento</h2>
+        <p style="opacity:.75; margin-bottom:20px; font-size:14px;">
+          Configure o horário de início e fim para cada dia da semana.
+          Desative os dias em que o Studio estará fechado.
+        </p>
+      
+        <div id="tabela-horarios" class="horarios-table"></div>
+      
+        <button id="btn-salvar-horarios" class="btn-save" style="margin-top:24px;">
+          💾 Salvar Horários
+        </button>
+        <p id="msg-horarios-salvo" style="display:none; color:#4caf50; margin-top:10px; font-weight:500;">
+          ✅ Horários salvos com sucesso!
+        </p>
       </section>
 
       <section id="sec-recesso" style="display:none;">
