@@ -463,6 +463,7 @@ const btnTabServ = document.getElementById('btn-servicos');
 const btnTabBloq = document.getElementById('btn-bloqueio');
 const btnTabRecesso = document.getElementById('btn-recesso'); // Novo botão
 const btnTabClientesBloq = document.getElementById('btn-clientes-bloq');
+const btnTabHorarios = document.getElementById('btn-horarios');
 
 function gerenciarAbas(abaAtiva) {
   document.getElementById('sec-agendamentos').style.display = abaAtiva === 'ag' ? 'block' : 'none';
@@ -471,6 +472,7 @@ function gerenciarAbas(abaAtiva) {
   document.getElementById('sec-recesso').style.display = abaAtiva === 'recesso' ? 'block' : 'none';
   document.getElementById('sec-agendar-manual').style.display = abaAtiva === 'manual' ? 'block' : 'none';
   document.getElementById('sec-clientes-bloqueados').style.display = abaAtiva === 'clientes' ? 'block' : 'none';
+  document.getElementById('sec-horarios').style.display = abaAtiva === 'horarios' ? 'block' : 'none';
     
   btnTabManual.classList.toggle('active', abaAtiva === 'manual');
   btnTabAg.classList.toggle('active', abaAtiva === 'ag');
@@ -478,9 +480,12 @@ function gerenciarAbas(abaAtiva) {
   btnTabBloq.classList.toggle('active', abaAtiva === 'bloq');
   btnTabRecesso.classList.toggle('active', abaAtiva === 'recesso');
   btnTabClientesBloq.classList.toggle('active', abaAtiva === 'clientes');
+  btnTabHorarios.classList.toggle('active', abaAtiva === 'horarios');
 
   if (abaAtiva === 'bloq') gerarGradeBloqueio();
   if (abaAtiva === 'clientes') carregarClientesBloqueados();
+  if (abaAtiva === 'horarios') renderizarTabelaHorarios();
+  if (btnTabHorarios) btnTabHorarios.onclick = () => gerenciarAbas('horarios');
 }
 
 if (btnTabAg) btnTabAg.onclick = () => gerenciarAbas('ag');
@@ -527,6 +532,99 @@ onValue(ref(db, 'configuracoes/recesso'), (snapshot) => {
     boxStatusRecesso.style.display = 'none';
   }
 });
+
+
+// --- 7.1 LÓGICA DE HORÁRIOS DE FUNCIONAMENTO (NOVO) ---
+const DIAS_SEMANA = [
+  { key: 'dom', label: 'Domingo' },
+  { key: 'seg', label: 'Segunda-feira' },
+  { key: 'ter', label: 'Terça-feira' },
+  { key: 'qua', label: 'Quarta-feira' },
+  { key: 'qui', label: 'Quinta-feira' },
+  { key: 'sex', label: 'Sexta-feira' },
+  { key: 'sab', label: 'Sábado' },
+];
+
+function renderizarTabelaHorarios() {
+  const container = document.getElementById('tabela-horarios');
+  if (!container) return;
+
+  // Carrega do Firebase (mesmo nó que gerarGradeBloqueio já usa)
+  get(ref(db, 'horarios_funcionamento')).then(snap => {
+    const dados = snap.val() || {};
+    container.innerHTML = '';
+
+    DIAS_SEMANA.forEach(({ key, label }) => {
+      // Mapeia chave curta → nome do Firebase (ex: 'seg' → 'segunda')
+      const nomesFirebase = {
+        dom: 'domingo', seg: 'segunda', ter: 'terça',
+        qua: 'quarta', qui: 'quinta', sex: 'sexta', sab: 'sábado'
+      };
+      const diaFirebase = nomesFirebase[key];
+      const cfg = dados[diaFirebase] || { fechado: true, inicio: '09', fim: '19' };
+      const aberto = !cfg.fechado;
+      const inicio = cfg.inicio ? cfg.inicio.toString().padStart(2, '0') + ':00' : '09:00';
+      const fim = cfg.fim ? cfg.fim.toString().padStart(2, '0') + ':00' : '19:00';
+
+      const row = document.createElement('div');
+      row.className = `horario-row${aberto ? '' : ' fechado'}`;
+      row.dataset.dia = diaFirebase;
+
+      row.innerHTML = `
+        <span class="horario-dia">${label}</span>
+        <label class="horario-toggle">
+          <input type="checkbox" class="toggle-aberto" ${aberto ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-status" style="font-size:13px;color:#ccc;min-width:58px;">
+          ${aberto ? 'Aberto' : 'Fechado'}
+        </span>
+        <input type="time" class="hora-inicio" value="${inicio}" ${aberto ? '' : 'disabled'}>
+        <span style="color:#888;font-size:13px;">até</span>
+        <input type="time" class="hora-fim" value="${fim}" ${aberto ? '' : 'disabled'}>
+      `;
+
+      const toggle = row.querySelector('.toggle-aberto');
+      const status = row.querySelector('.toggle-status');
+      const hIni = row.querySelector('.hora-inicio');
+      const hFim = row.querySelector('.hora-fim');
+
+      toggle.addEventListener('change', () => {
+        const open = toggle.checked;
+        row.classList.toggle('fechado', !open);
+        status.textContent = open ? 'Aberto' : 'Fechado';
+        hIni.disabled = !open;
+        hFim.disabled = !open;
+      });
+
+      container.appendChild(row);
+    });
+  });
+}
+
+document.getElementById('btn-salvar-horarios')?.addEventListener('click', () => {
+  const updates = {};
+
+  document.querySelectorAll('#tabela-horarios .horario-row').forEach(row => {
+    const dia = row.dataset.dia; // nome já no formato do Firebase ('segunda', etc.)
+    const aberto = row.querySelector('.toggle-aberto').checked;
+    const inicio = row.querySelector('.hora-inicio').value.split(':')[0]; // só a hora
+    const fim = row.querySelector('.hora-fim').value.split(':')[0];
+
+    updates[`horarios_funcionamento/${dia}`] = {
+      fechado: !aberto,
+      inicio: Number(inicio),
+      fim: Number(fim)
+    };
+  });
+
+  update(ref(db), updates).then(() => {
+    const msg = document.getElementById('msg-horarios-salvo');
+    if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 3000); }
+  });
+});
+
+
 
 
 // --- 8️⃣ FORMULÁRIO DE SERVIÇOS E FILTROS ---
