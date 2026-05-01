@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------
-   PAINEL DO BARBEIRO - BARBEARIA SF (ESTILO CONSOLIDADO)
+   PAINEL DO STUDIO - STUDIO CAROLINA BRITTO (ESTILO CONSOLIDADO)
 -----------------------------------------------------------*/
 
 #login-section,
@@ -884,4 +884,118 @@ input:checked + .slider:before { transform: translateX(20px); }
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* ── Tabela de Horários ── */
+.horarios-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.horario-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 10px;
+  padding: 12px 18px;
+  flex-wrap: wrap;
+  transition: border-color .25s;
+}
+
+.horario-row:hover {
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.horario-row.fechado {
+  opacity: .45;
+}
+
+.horario-dia {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #d4af37;
+  width: 130px;
+  font-size: 14px;
+}
+
+.horario-row label.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #ccc;
+  user-select: none;
+}
+
+.horario-row input[type="time"] {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 8px;
+  color: #fff;
+  padding: 6px 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+.horario-row input[type="time"]:focus {
+  border-color: #d4af37;
+}
+
+.horario-row input[type="time"]:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.horario-separador {
+  color: #888;
+  font-size: 13px;
+}
+
+/* Toggle switch reutilizando o padrão do projeto */
+.horario-toggle {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.horario-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.horario-toggle .slider {
+  position: absolute;
+  inset: 0;
+  background: #555;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background .3s;
+}
+
+.horario-toggle input:checked+.slider {
+  background: #d4af37;
+}
+
+.horario-toggle .slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .3s;
+}
+
+.horario-toggle input:checked+.slider::before {
+  transform: translateX(18px);
 }
