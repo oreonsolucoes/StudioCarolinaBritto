@@ -1025,11 +1025,17 @@ header > div { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; 
 /* ── Aba Mensagem de Confirmação ── */
 .msg-ajuda { font-size:.88rem; color:#d8c9b0; line-height:1.5; margin-bottom:12px; }
 .msg-variaveis { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-.msg-chip { background:transparent; color:var(--dourado); border:1px solid var(--dourado); border-radius:999px; padding:5px 12px;
-  font:500 .8rem 'Poppins',sans-serif; cursor:pointer; transition:.2s; }
-.msg-chip:hover { background:rgba(212,175,55,.15); }
-#msg-texto { width:100%; box-sizing:border-box; background:#1c110a; color:#f5e9d0; border:1px solid rgba(212,175,55,.5);
-  border-radius:10px; padding:12px; font:400 .95rem/1.5 'Poppins',sans-serif; resize:vertical; }
+/* Etiqueta de variável: dourada, inteira, não editável como texto */
+.var-token { display:inline-block; background:linear-gradient(135deg,#e2c04a,#c9a227); color:#1c110a; border:0; border-radius:999px;
+  padding:2px 11px; margin:0 2px; font:600 .82rem 'Poppins',sans-serif; line-height:1.6; user-select:none; -webkit-user-select:none; white-space:nowrap; }
+.var-chip { cursor:grab; touch-action:none; padding:6px 14px; box-shadow:0 1px 4px rgba(0,0,0,.4); }
+.var-chip:active { cursor:grabbing; }
+.msg-fantasma { position:fixed; z-index:99999; pointer-events:none; transform:translate(-50%,-120%); opacity:.92; box-shadow:0 6px 16px rgba(0,0,0,.55); }
+.msg-editor { min-height:190px; white-space:pre-wrap; word-break:break-word; background:#1c110a; color:#f5e9d0; border:1px solid rgba(212,175,55,.5);
+  border-radius:10px; padding:12px; font:400 .95rem/1.9 'Poppins',sans-serif; outline:none; }
+.msg-editor:focus { border-color:var(--dourado); box-shadow:0 0 0 2px rgba(212,175,55,.2); }
+.msg-editor.alvo { border-color:var(--dourado); box-shadow:0 0 0 3px rgba(212,175,55,.45); }
+.msg-editor .var-token { cursor:default; }
 .msg-contador { text-align:right; font-size:.75rem; opacity:.6; margin-top:4px; }
 .msg-sub { font-family:'Cinzel Decorative',serif; color:var(--dourado); font-size:.95rem; margin:14px 0 8px; }
 .msg-preview { white-space:pre-wrap; background:#2f3b2a; border:1px solid rgba(212,175,55,.25); color:#f2f2f2; border-radius:12px;

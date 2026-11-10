@@ -188,9 +188,9 @@
         <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#mensagem"/></svg> Mensagem de Confirmação</h2>
         <div class="admin-toolbar" style="display:block;">
           <p class="msg-ajuda">Texto enviado à cliente pelo WhatsApp quando ela agenda. Cada agenda tem a sua mensagem:
-            você está editando a de <strong id="msg-agenda-nome"></strong>. Toque em uma variável para inserir no texto.</p>
+            você está editando a de <strong id="msg-agenda-nome"></strong>. Arraste os itens dourados para dentro do texto (ou toque neles para inserir). Eles são preenchidos sozinhos com os dados de cada cliente.</p>
           <div id="msg-variaveis" class="msg-variaveis"></div>
-          <textarea id="msg-texto" rows="10" maxlength="1200" spellcheck="true"></textarea>
+          <div id="msg-editor" class="msg-editor" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="Texto da mensagem"></div>
           <div class="msg-contador"><span id="msg-contador">0</span>/1200</div>
           <h3 class="msg-sub">Como a cliente vai ver</h3>
           <div id="msg-preview" class="msg-preview"></div>
@@ -354,7 +354,7 @@
       </div>
     </div>
 
-    <script type="module" src="js/admin.js"></script>
+    <script type="module" src="js/admin.js?v=20261109b"></script>
 
     <!-- Badge de pendentes em tempo real -->
     <script type="module">
