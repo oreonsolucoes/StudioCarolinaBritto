@@ -1,7 +1,7 @@
 :root {
-    --preto: #0d0d0d;
-    --cinza-escuro: #1a1a1a;
-    --dourado: #fa3698;
+    --preto: #1c110a;
+    --cinza-escuro: #2b1a10;
+    --dourado: #d4af37;
     --branco: #f5f5f5;
     --verde: #2ecc71;
 }
@@ -161,7 +161,7 @@ body {
 
 /* BOTÃO */
 .btn-retorno {
-    background: linear-gradient(135deg, #fa80e0, #f826ff);
+    background: linear-gradient(135deg, #e6c25c, #c9a227);
     color: var(--preto);
     border: none;
     padding: 14px 20px;
@@ -177,7 +177,7 @@ body {
 
 .btn-retorno:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(247, 0, 247, 0.959);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.35);
 }
 
 /* RODAPÉ */

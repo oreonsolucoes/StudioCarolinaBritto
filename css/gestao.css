@@ -5,7 +5,7 @@
 /* Importa as variáveis do admin caso não estejam carregadas */
 :root {
     --dourado: #d4af37;
-    --preto-claro: #1a1a1a;
+    --preto-claro: #2b1a10;
     --branco: #ffffff;
 }
 
@@ -80,7 +80,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 /* Card de Resultado Financeiro mais chamativo */
 .resultado-card {
-    background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+    background: linear-gradient(145deg, #2b1a10, #1c110a);
     border-left: 5px solid var(--dourado);
     padding: 30px;
     border-radius: 10px;

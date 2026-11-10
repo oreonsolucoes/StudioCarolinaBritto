@@ -8,9 +8,9 @@
 }
 
 :root {
-  --preto: #0d0d0d;
-  --cinza: #2e2e2e;
-  --dourado: #f701ea;
+  --preto: #1c110a;
+  --cinza: #3b2718;
+  --dourado: #d4af37;
   --branco: #f5f5f5;
   --vermelho: #e63946;
   --verde: #2ecc71;
@@ -26,7 +26,7 @@
 body {
   min-height: 100vh;
   color: var(--branco);
-  background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)),
+  background: linear-gradient(rgba(30, 18, 10, 0.78), rgba(30, 18, 10, 0.78)),
       url('https://plus.unsplash.com/premium_photo-1661337159345-bc2e2e014c49?q=80&w=870&auto=format');
   background-size: cover;
   background-position: center;
@@ -57,7 +57,7 @@ body {
 
 /* --- LOGIN --- */
 .login-container {
-  background: rgba(13, 13, 13, 0.95);
+  background: rgba(38, 24, 15, 0.95);
   border: 1px solid var(--dourado);
   padding: 40px 30px;
   border-radius: 12px;
@@ -81,7 +81,7 @@ body {
 .login-box input {
   width: 100%;
   padding: 12px;
-  background: #1a1a1a;
+  background: #2b1a10;
   border: 1px solid #333;
   border-radius: 6px;
   color: white;
@@ -132,7 +132,7 @@ body {
 .admin-container {
   width: 100%;
   max-width: 1200px;
-  background: rgba(13, 13, 13, 0.95);
+  background: rgba(38, 24, 15, 0.95);
   /* Deixei um pouco mais escuro para ler melhor */
   border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 12px;
@@ -376,7 +376,7 @@ header h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(24, 14, 8, 0.92);
   /* Escurecido para foco total */
   display: none;
   justify-content: center;
@@ -698,7 +698,7 @@ input:checked + .slider:before { transform: translateX(20px); }
   padding: 12px;
   border-radius: 10px;
   border: 1px solid rgba(212, 175, 55, 0.3);
-  background: #111;
+  background: #2b1a10;
   color: #fff;
   font-size: 14px;
 
@@ -833,7 +833,7 @@ input:checked + .slider:before { transform: translateX(20px); }
   position: absolute;
   top: 110%;
   left: 0;
-  background: #111;
+  background: #2b1a10;
   border: 1px solid var(--dourado);
   border-radius: 8px;
   min-width: 220px;
@@ -999,3 +999,12 @@ input:checked + .slider:before { transform: translateX(20px); }
 .horario-toggle input:checked+.slider::before {
   transform: translateX(18px);
 }
+
+/* ── Seletor de agenda / papel ── */
+.barra-agenda { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; padding:10px 14px;
+  background:rgba(38,24,15,.88); border:1px solid var(--dourado); border-radius:12px; }
+.barra-agenda label { color:var(--dourado); font-weight:700; }
+.barra-agenda select { background:#1c110a; color:#f5e9d0; border:1px solid var(--dourado); border-radius:8px; padding:8px 12px; font-size:1rem; }
+.rotulo-papel { margin-left:auto; font-size:.8rem; opacity:.75; }
+.sem-acesso { margin:30px auto; max-width:520px; padding:20px; text-align:center; line-height:1.5;
+  background:rgba(38,24,15,.88); border:1px solid var(--dourado); border-radius:12px; word-break:break-all; }

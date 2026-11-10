@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor — Studio Carolina Britto</title>
+<style>
+  :root{
+    --bg:#1c110a; --panel:#2b1a10; --line:#4a2f1c;
+    --gold:#d4af37; --gold-dim:#8a7327;
+    --txt:#f4f2ea; --muted:#8a8a92; --green:#2ecc71; --gap:#e67e22;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:'Segoe UI',system-ui,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  /* ── CABEÇALHO ── */
+  header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:2vh 3vw; border-bottom:1px solid var(--line);
+  }
+  .marca{display:flex;align-items:center;gap:14px}
+  .marca img{height:5vh}
+  .marca h1{
+    font-size:2.4vh; letter-spacing:3px; font-weight:700;
+    text-transform:uppercase; color:var(--gold);
+  }
+  .relogio{text-align:right}
+  .header-dir{display:flex;align-items:center;gap:2vw}
+  .btn-girar{
+    background:transparent;border:1px solid var(--line);color:var(--gold);
+    width:6vh;height:6vh;min-width:40px;min-height:40px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:background .2s,border-color .2s,transform .2s;
+  }
+  .btn-girar:hover{background:var(--panel);border-color:var(--gold-dim)}
+  .btn-girar:active{transform:scale(.9)}
+  .btn-girar svg{width:60%;height:60%}
+  .btn-girar.girando svg{animation:girar .6s ease}
+  @keyframes girar{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  .relogio .hora{
+    font-size:5vh; font-weight:800; font-variant-numeric:tabular-nums;
+    letter-spacing:2px; line-height:1;
+  }
+  .relogio .data{font-size:2vh;color:var(--muted);text-transform:capitalize;margin-top:4px}
+
+  /* ── CORPO ── */
+  main{flex:1;display:grid;grid-template-columns:1.1fr 0.9fr;gap:0;min-height:0}
+
+  /* PRÓXIMO CLIENTE (destaque) */
+  .agora{
+    padding:4vh 3vw; display:flex; flex-direction:column; justify-content:center;
+    border-right:1px solid var(--line); position:relative; min-width:0;
+  }
+  .agora .eyebrow{
+    font-size:clamp(13px,1.9vh,26px); letter-spacing:4px; text-transform:uppercase;
+    color:var(--gold); margin-bottom:2vh; display:flex;align-items:center;gap:12px;
+  }
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 0 0 rgba(46,204,113,.6);animation:pulse 2s infinite}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(46,204,113,.5)}
+    70%{box-shadow:0 0 0 18px rgba(46,204,113,0)}
+    100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}
+  }
+  .agora .hora-grande{
+    font-size:clamp(90px,20vh,240px); font-weight:800; line-height:.9;
+    font-variant-numeric:tabular-nums; letter-spacing:-2px;
+    transition:font-size .3s ease;
+  }
+  .agora .nome{font-size:clamp(40px,9vh,110px);font-weight:700;margin-top:1vh;text-transform:uppercase;word-break:break-word;line-height:1;transition:font-size .3s ease}
+  .agora .servico{font-size:clamp(20px,4vh,48px);color:var(--muted);margin-top:1.5vh}
+  .agora .badge{
+    display:inline-block;margin-top:2.5vh;font-size:clamp(14px,2.2vh,28px);font-weight:700;
+    background:var(--gold);color:#000;padding:6px 16px;border-radius:20px;
+    letter-spacing:1px;width:fit-content;
+  }
+  .agora.vazio .hora-grande{font-size:clamp(60px,12vh,140px);color:var(--muted)}
+  .agora.vazio .nome{font-size:clamp(24px,5vh,56px);color:var(--muted);font-weight:400}
+
+  /* FILA DO DIA */
+  .fila{padding:3vh 2.5vw;display:flex;flex-direction:column;min-height:0}
+  .fila h2{
+    font-size:1.9vh;letter-spacing:3px;text-transform:uppercase;
+    color:var(--muted);margin-bottom:2vh;flex-shrink:0;
+  }
+  .fila-scroll{overflow-y:auto;overflow-x:hidden;flex:1;display:flex;flex-direction:column;gap:1.4vh;scrollbar-width:none}
+  .fila-scroll::-webkit-scrollbar{display:none}
+  .card{
+    display:flex;align-items:center;gap:2vw;
+    background:var(--panel);border:1px solid var(--line);
+    border-left:5px solid var(--gold-dim);
+    border-radius:12px;padding:2vh 2vw;flex-shrink:0;
+  }
+  .card .h{
+    font-size:clamp(22px,4vh,52px);font-weight:800;font-variant-numeric:tabular-nums;
+    color:var(--gold);min-width:5ch;
+  }
+  .card .info{flex:1;min-width:0}
+  .card .info .c{font-size:clamp(18px,3.2vh,42px);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+  .card .info .s{font-size:clamp(13px,2.1vh,26px);color:var(--muted);margin-top:2px}
+  .card .plano{font-size:clamp(11px,1.6vh,20px);font-weight:700;background:var(--gold);color:#000;padding:4px 12px;border-radius:12px;white-space:nowrap}
+  .card.proximo{border-left-color:var(--green)}
+  .card.proximo .h{color:var(--green)}
+
+  /* INTERVALO (lacuna) */
+  .intervalo{
+    display:flex;align-items:center;gap:1vw;
+    padding:.6vh 2vw;color:var(--gap);flex-shrink:0;
+    font-size:1.7vh;letter-spacing:1px;
+  }
+  .intervalo .barra{flex:1;height:1px;background:repeating-linear-gradient(90deg,var(--gap) 0 8px,transparent 8px 16px);opacity:.5}
+
+  .vazio-fila{color:var(--muted);font-size:2.4vh;text-align:center;margin-top:6vh}
+
+  footer{
+    padding:1.4vh 3vw;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:1.6vh;color:var(--muted);flex-shrink:0;
+  }
+  .status-conexao{display:flex;align-items:center;gap:8px}
+  .status-conexao .d{width:8px;height:8px;border-radius:50%;background:var(--green)}
+  .status-conexao.off .d{background:#e74c3c}
+
+  /* ═══ ORIENTAÇÃO RETRATO (tela em pé) ═══ */
+  /* Vale automaticamente em tela física vertical, OU quando forçado pelo botão. */
+  @media (orientation: portrait){
+    body:not(.forcar-paisagem) main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    body:not(.forcar-paisagem) .agora{border-right:none;border-bottom:1px solid var(--line);padding:3vh 5vw}
+    body:not(.forcar-paisagem) .agora .hora-grande{font-size:22vw}
+    body:not(.forcar-paisagem) .agora .nome{font-size:9vw}
+    body:not(.forcar-paisagem) .agora .servico{font-size:4.5vw}
+    body:not(.forcar-paisagem) .agora.vazio .hora-grande{font-size:16vw}
+    body:not(.forcar-paisagem) .agora.vazio .nome{font-size:5vw}
+    body:not(.forcar-paisagem) .fila{padding:3vh 5vw}
+    body:not(.forcar-paisagem) .card .h{font-size:6vw}
+    body:not(.forcar-paisagem) .card .info .c{font-size:5vw}
+    body:not(.forcar-paisagem) .card .info .s{font-size:3.4vw}
+    body:not(.forcar-paisagem) .card .plano{font-size:2.8vw}
+    body:not(.forcar-paisagem) .relogio .hora{font-size:6vw}
+    body:not(.forcar-paisagem) .marca h1{font-size:3.6vw}
+  }
+
+  /* Retrato FORÇADO pelo botão (mesmo em tela física horizontal) */
+  body.forcar-retrato main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  body.forcar-retrato .agora{border-right:none;border-bottom:1px solid var(--line);padding:3vh 5vw}
+  body.forcar-retrato .fila{padding:3vh 5vw}
+
+  /* ═══ TELAS PEQUENAS (celular) ═══ */
+  @media (max-width:600px){
+    header{padding:12px 16px}
+    .marca img{height:32px}
+    .marca h1{font-size:14px}
+    .relogio .hora{font-size:26px}
+    .relogio .data{font-size:12px}
+    footer{font-size:11px;padding:8px 16px}
+  }
+
+  /* ═══ PAISAGEM: preencher a altura, nada de espaço morto ═══ */
+  /* tela física horizontal (não forçada a retrato) OU forçada a paisagem */
+  @media (orientation: landscape){
+    body:not(.forcar-retrato) .fila-scroll{justify-content:flex-start;gap:1.4vh}
+    body:not(.forcar-retrato) .fila-scroll .card{
+      flex:0 0 auto;min-height:clamp(58px,11vh,130px);padding:0 2vw;
+    }
+    /* garante fonte grande nos cartões usando a altura da tela */
+    body:not(.forcar-retrato) .card .h{font-size:clamp(28px,5vh,60px)}
+    body:not(.forcar-retrato) .card .info .c{font-size:clamp(22px,4vh,48px)}
+    body:not(.forcar-retrato) .card .info .s{font-size:clamp(15px,2.4vh,30px)}
+    body:not(.forcar-retrato) .agora{justify-content:center}
+  }
+  body.forcar-paisagem .fila-scroll{justify-content:flex-start;gap:1.4vh}
+  body.forcar-paisagem .fila-scroll .card{flex:0 0 auto;min-height:clamp(58px,11vh,130px);padding:0 2vw}
+
+  /* ═══ FAIXA DE HORÁRIOS LIVRES ═══ */
+  .livres{
+    border-top:1px solid var(--line);
+    padding:1.6vh 3vw;display:flex;align-items:center;gap:2vw;flex-shrink:0;
+    background:rgba(255,255,255,.02);
+  }
+  .livres-titulo{
+    font-size:clamp(12px,1.9vh,22px);letter-spacing:2px;text-transform:uppercase;
+    color:var(--muted);white-space:nowrap;flex-shrink:0;
+  }
+  .livres-lista{
+    display:flex;gap:.8vw;flex-wrap:wrap;overflow:hidden;flex:1;
+  }
+  .slot-livre{
+    font-size:clamp(14px,2.4vh,30px);font-weight:700;font-variant-numeric:tabular-nums;
+    color:var(--green);border:1px solid rgba(46,204,113,.35);
+    background:rgba(46,204,113,.08);border-radius:8px;padding:.5vh 1vw;white-space:nowrap;
+  }
+  .livres-vazio{color:var(--muted);font-size:clamp(13px,2vh,24px)}
+
+  .slot-livre{cursor:pointer;transition:background .15s,transform .1s;font-family:inherit;border-style:solid}
+  .slot-livre:hover{background:rgba(46,204,113,.22)}
+  .slot-livre:active{transform:scale(.94)}
+
+  /* ═══ MODAL AGENDAMENTO RÁPIDO ═══ */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:100;padding:4vw;
+  }
+  .modal-overlay.aberto{display:flex}
+  .modal-box{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:28px;width:min(480px,92vw);max-height:92vh;overflow:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
+  }
+  .modal-titulo{font-size:24px;font-weight:800;color:var(--gold);margin-bottom:18px;text-align:center}
+  .modal-titulo span{color:var(--txt)}
+  .modal-label{display:block;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+  .modal-input{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:14px;font-size:17px;font-family:inherit;
+  }
+  .modal-input:focus{outline:none;border-color:var(--gold)}
+  select.modal-input{cursor:pointer}
+  .modal-erro{color:#e74c3c;font-size:14px;margin-top:10px;min-height:18px}
+  .modal-acoes{display:flex;gap:12px;margin-top:22px}
+  .modal-btn{
+    flex:1;padding:15px;border:none;border-radius:10px;font-size:16px;font-weight:700;
+    cursor:pointer;font-family:inherit;transition:opacity .15s;
+  }
+  .modal-btn:active{opacity:.8}
+  .modal-btn.cancelar{background:var(--line);color:var(--txt)}
+  .modal-btn.confirmar{background:var(--gold);color:#000}
+  .modal-btn.confirmar:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Animação de troca de orientação */
+  main{transition:opacity .25s ease}
+  main.trocando{opacity:0;transform:scale(.98)}
+</style>
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <h1>Studio Carolina Britto</h1>
+    </div>
+    <div class="header-dir">
+      <button id="btn-girar" class="btn-girar" title="Girar tela" aria-label="Girar orientação da tela">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4v5h5"></path>
+          <path d="M20 20v-5h-5"></path>
+          <path d="M4 9a8 8 0 0 1 14-3"></path>
+          <path d="M20 15a8 8 0 0 1-14 3"></path>
+        </svg>
+      </button>
+      <div class="relogio">
+        <div class="hora" id="relogio-hora">--:--</div>
+        <div class="data" id="relogio-data">—</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="agora vazio" id="painel-agora">
+      <div class="eyebrow"><span class="dot"></span> Próximo cliente</div>
+      <div class="hora-grande" id="ag-hora">--:--</div>
+      <div class="nome" id="ag-nome">Sem agendamentos</div>
+      <div class="servico" id="ag-servico"></div>
+      <span class="badge" id="ag-badge" style="display:none"></span>
+    </section>
+
+    <section class="fila">
+      <h2>Ainda hoje</h2>
+      <div class="fila-scroll" id="fila"></div>
+    </section>
+  </main>
+
+  <section class="livres" id="secao-livres">
+    <div class="livres-titulo">Horários livres hoje</div>
+    <div class="livres-lista" id="livres-lista"></div>
+  </section>
+
+  <footer>
+    <div class="status-conexao" id="conexao"><span class="d"></span> <span id="conexao-txt">Conectando…</span></div>
+    <div id="resumo-dia">—</div>
+  </footer>
+
+  <!-- Modal de agendamento rápido pelo monitor -->
+  <div class="modal-overlay" id="modal-rapido">
+    <div class="modal-box">
+      <div class="modal-titulo">Agendar às <span id="mr-hora">--:--</span></div>
+      <label class="modal-label">Nome do cliente</label>
+      <input type="text" id="mr-nome" class="modal-input" placeholder="Ex: João da Silva" autocomplete="off">
+      <label class="modal-label">Telefone / WhatsApp</label>
+      <input type="tel" id="mr-tel" class="modal-input" placeholder="Ex: 11987654321" inputmode="numeric" autocomplete="off">
+      <label class="modal-label">Serviço</label>
+      <select id="mr-servico" class="modal-input"></select>
+      <div id="mr-erro" class="modal-erro"></div>
+      <div class="modal-acoes">
+        <button class="modal-btn cancelar" onclick="fecharAgendamentoRapido()">Cancelar</button>
+        <button class="modal-btn confirmar" id="mr-confirmar" onclick="confirmarAgendamentoRapido()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { AGENDAS } from "./js/config.js";
+import { caminho, agendaValida, agendaDoAgendamento } from "./js/agendas.js";
+
+// Agenda exibida: monitor.html?agenda=cabelo (padrão: unhas)
+const AGENDA = agendaValida(new URLSearchParams(location.search).get('agenda'));
+const _tit = document.querySelector('.marca h1');
+if (_tit) _tit.textContent = `Studio Carolina Britto · ${AGENDAS[AGENDA].icone} ${AGENDAS[AGENDA].nome}`;
+document.title = `Monitor ${AGENDAS[AGENDA].nome} — Studio Carolina Britto`;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBSipc3lVUGF-gTs5ktrU9G060GQ0liCBM",
+  authDomain: "studio-manicure-f909f.firebaseapp.com",
+  databaseURL: "https://studio-manicure-f909f-default-rtdb.firebaseio.com",
+  projectId: "studio-manicure-f909f",
+  storageBucket: "studio-manicure-f909f.firebasestorage.app",
+  messagingSenderId: "257743931123",
+  appId: "1:257743931123:web:d68421b2e04cb4cb9b5986",
+  measurementId: "G-TD79VEFQG5"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const DIAS = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+// helpers
+const hojeStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+const minutos = (hhmm) => {
+  if (typeof hhmm === 'number') return hhmm*60; // hora inteira (ex.: 9)
+  const [h,m] = String(hhmm||'0:0').split(':').map(Number);
+  return (h||0)*60 + (m||0);
+};
+const paraHHMM = (min) => `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+
+// relógio
+function tickRelogio(){
+  const d = new Date();
+  document.getElementById('relogio-hora').textContent =
+    `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('relogio-data').textContent =
+    `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
+}
+tickRelogio();
+setInterval(tickRelogio, 1000);
+
+let agendamentosDia = [];      // só clientes reais (para a fila)
+let ocupadosDia = [];          // todos, incluindo BLOQUEADO (para calcular livres)
+let horariosFuncionamento = null;
+let servicosDisponiveis = {};
+
+// serviços (para o agendamento rápido pelo monitor)
+onValue(ref(db, caminho('servicos', AGENDA)), (snap) => {
+  servicosDisponiveis = snap.val() || {};
+});
+
+// horário de funcionamento (para saber abertura/fechamento do dia)
+onValue(ref(db, caminho('horarios_funcionamento', AGENDA)), (snap) => {
+  horariosFuncionamento = snap.val() || {};
+  render();
+}, (err) => console.error(err));
+
+// escuta o Firebase
+onValue(ref(db, 'agendamentos'), (snap) => {
+  marcarConexao(true);
+  const dados = snap.val() || {};
+  const hoje = hojeStr();
+  const doDia = Object.entries(dados)
+    .map(([id,a]) => ({ id, ...a }))
+    .filter(a => a && a.data === hoje && agendaDoAgendamento(a) === AGENDA)
+    .sort((a,b) => minutos(a.hora) - minutos(b.hora));
+  ocupadosDia = doDia; // inclui bloqueios
+  agendamentosDia = doDia.filter(a => a.cliente !== 'BLOQUEADO');
+  render();
+}, (err) => { console.error(err); marcarConexao(false); });
+
+function marcarConexao(ok){
+  const el = document.getElementById('conexao');
+  el.classList.toggle('off', !ok);
+  document.getElementById('conexao-txt').textContent = ok ? 'Ao vivo' : 'Sem conexão';
+}
+
+function render(){
+  const d = new Date();
+  const agora = d.getHours()*60 + d.getMinutes();
+  // ainda relevantes hoje = não terminaram (início + duração > agora)
+  const ativos = agendamentosDia.filter(a => (minutos(a.hora) + (a.duracao||20)) > agora);
+
+  const painel = document.getElementById('painel-agora');
+  const fila = document.getElementById('fila');
+  const eyebrow = painel.querySelector('.eyebrow');
+
+  if (ativos.length === 0){
+    painel.classList.add('vazio');
+    if (eyebrow) eyebrow.innerHTML = '<span class="dot"></span> Encerrado';
+    document.getElementById('ag-hora').textContent = '✓';
+    document.getElementById('ag-nome').textContent = 'Dia encerrado';
+    document.getElementById('ag-servico').textContent = 'Nenhum atendimento restante';
+    document.getElementById('ag-badge').style.display = 'none';
+    fila.innerHTML = '<div class="vazio-fila">Sem próximos agendamentos hoje.</div>';
+    document.getElementById('resumo-dia').textContent =
+      `${agendamentosDia.length} atendimento(s) hoje`;
+    renderLivres();
+    return;
+  }
+
+  // Quem está sendo atendido agora (já começou e não terminou) — sai do painel e da fila
+  const emAtendimento = ativos.find(a => {
+    const ini = minutos(a.hora);
+    return ini <= agora && (ini + (a.duracao||20)) > agora;
+  });
+
+  // Próximos = os que ainda NÃO começaram
+  const proximos = ativos.filter(a => minutos(a.hora) > agora);
+
+  if (proximos.length === 0){
+    // ninguém à frente: só há quem está na cadeira (ou nada)
+    painel.classList.add('vazio');
+    if (eyebrow) eyebrow.innerHTML = '<span class="dot"></span> Próximo cliente';
+    document.getElementById('ag-hora').textContent = '—';
+    document.getElementById('ag-nome').textContent = emAtendimento ? 'Sem próximos na fila' : 'Dia encerrado';
+    document.getElementById('ag-servico').textContent = emAtendimento
+      ? `Em atendimento agora: ${emAtendimento.cliente}` : '';
+    document.getElementById('ag-badge').style.display = 'none';
+    fila.innerHTML = '<div class="vazio-fila">Nenhum próximo agendamento.</div>';
+    document.getElementById('resumo-dia').textContent =
+      `${ativos.length} restante(s) · ${agendamentosDia.length} no total hoje`;
+    renderLivres();
+    setTimeout(iniciarAutoScroll, 100);
+    return;
+  }
+
+  // destaque = o PRÓXIMO cliente (nunca quem está na cadeira)
+  const destaque = proximos[0];
+  painel.classList.remove('vazio');
+  if (eyebrow){
+    eyebrow.innerHTML = '<span class="dot"></span> Próximo cliente';
+  }
+  document.getElementById('ag-hora').textContent = destaque.hora;
+  document.getElementById('ag-nome').textContent = destaque.cliente || '—';
+  document.getElementById('ag-servico').textContent =
+    `${destaque.servicoNome || 'Atendimento'} · ${destaque.duracao||20} min`;
+  const badge = document.getElementById('ag-badge');
+  if (destaque.ehPlano){
+    badge.style.display = 'inline-block';
+    badge.textContent = destaque.planoNome ? `PLANO · ${destaque.planoNome}` : 'PLANO';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // fila = os próximos depois do destaque (quem está em atendimento não entra)
+  const resto = proximos.filter(a => a !== destaque);
+  fila.innerHTML = '';
+  // intervalos a partir do fim do destaque
+  let fimAnterior = minutos(destaque.hora) + (destaque.duracao||20);
+
+  if (resto.length === 0){
+    fila.innerHTML = '<div class="vazio-fila">Esse é o último de hoje.</div>';
+  }
+
+  resto.forEach((a, i) => {
+    const ini = minutos(a.hora);
+    const folga = ini - fimAnterior;
+    // mostra intervalo se houver folga significativa (>= 10 min)
+    if (folga >= 10){
+      const div = document.createElement('div');
+      div.className = 'intervalo';
+      div.innerHTML = `<span>⏸ intervalo ${folga} min</span><span class="barra"></span><span>${paraHHMM(fimAnterior)}–${a.hora}</span>`;
+      fila.appendChild(div);
+    }
+    const card = document.createElement('div');
+    card.className = 'card' + (i === 0 ? ' proximo' : '');
+    card.innerHTML = `
+      <div class="h">${a.hora}</div>
+      <div class="info">
+        <div class="c">${a.cliente || '—'}</div>
+        <div class="s">${a.servicoNome || 'Atendimento'} · ${a.duracao||20} min</div>
+      </div>
+      ${a.ehPlano ? '<span class="plano">PLANO</span>' : ''}`;
+    fila.appendChild(card);
+    fimAnterior = ini + (a.duracao||20);
+  });
+
+  document.getElementById('resumo-dia').textContent =
+    `${ativos.length} restante(s) · ${agendamentosDia.length} no total hoje`;
+  renderLivres();
+  setTimeout(iniciarAutoScroll, 100);
+}
+
+// ── Botão de girar orientação ──
+const btnGirar = document.getElementById('btn-girar');
+const mainEl = document.querySelector('main');
+btnGirar.addEventListener('click', () => {
+  const body = document.body;
+  // Descobre a orientação efetiva atual (física ou já forçada)
+  const ehRetratoAgora = body.classList.contains('forcar-retrato') ||
+    (!body.classList.contains('forcar-paisagem') && window.matchMedia('(orientation: portrait)').matches);
+
+  // animação: apaga, troca, reacende
+  btnGirar.classList.remove('girando');
+  void btnGirar.offsetWidth; // reinicia a animação
+  btnGirar.classList.add('girando');
+  mainEl.classList.add('trocando');
+
+  setTimeout(() => {
+    body.classList.remove('forcar-retrato', 'forcar-paisagem');
+    body.classList.add(ehRetratoAgora ? 'forcar-paisagem' : 'forcar-retrato');
+    render(); // recalcula tamanhos da fila para a nova orientação
+    mainEl.classList.remove('trocando');
+  }, 250);
+});
+
+// ── Horários livres de hoje ──
+function renderLivres(){
+  const lista = document.getElementById('livres-lista');
+  if (!horariosFuncionamento){ lista.innerHTML = ''; return; }
+
+  const d = new Date();
+  const agora = d.getHours()*60 + d.getMinutes();
+  // chave do dia da semana no formato do banco
+  const chaveDia = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][d.getDay()];
+  const config = horariosFuncionamento[chaveDia];
+
+  if (!config || config.fechado){
+    lista.innerHTML = '<span class="livres-vazio">Fechado hoje</span>';
+    return;
+  }
+
+  const abertura = minutos(config.inicio);
+  const fechamento = minutos(config.fim);
+  const SLOT = 10; // mesmo passo do agendamento
+
+  const livres = [];
+  for (let t = abertura; t <= fechamento; t += SLOT){
+    if (t <= agora) continue; // já passou
+    const fimSlot = t + SLOT;
+    // ocupado se conflita com qualquer agendamento OU bloqueio
+    const ocupado = ocupadosDia.some(a => {
+      const ini = minutos(a.hora);
+      const fim = ini + (Number(a.duracao) || 20);
+      return t < fim && fimSlot > ini;
+    });
+    if (!ocupado) livres.push(paraHHMM(t));
+  }
+
+  if (livres.length === 0){
+    lista.innerHTML = '<span class="livres-vazio">Nenhum horário livre restante hoje</span>';
+    return;
+  }
+  lista.innerHTML = livres.map(h => `<button class="slot-livre" onclick="abrirAgendamentoRapido('${h}')">${h}</button>`).join('');
+}
+
+// ── Agendamento rápido pelo monitor ──
+let horaRapidoSelecionada = null;
+
+window.abrirAgendamentoRapido = function(hora){
+  horaRapidoSelecionada = hora;
+  document.getElementById('mr-hora').textContent = hora;
+  document.getElementById('mr-nome').value = '';
+  document.getElementById('mr-tel').value = '';
+  document.getElementById('mr-erro').textContent = '';
+
+  // popula serviços ordenados por nome
+  const sel = document.getElementById('mr-servico');
+  const ordenados = Object.entries(servicosDisponiveis)
+    .filter(([,s]) => s && s.nome)
+    .sort((a,b) => (a[1].nome||'').localeCompare(b[1].nome||''));
+  sel.innerHTML = ordenados.map(([id,s]) =>
+    `<option value="${id}">${s.nome} · ${s.duracao||20}min${Number(s.preco)>0?` · R$${s.preco}`:''}</option>`
+  ).join('');
+
+  document.getElementById('modal-rapido').classList.add('aberto');
+  setTimeout(() => document.getElementById('mr-nome').focus(), 100);
+};
+
+window.fecharAgendamentoRapido = function(){
+  document.getElementById('modal-rapido').classList.remove('aberto');
+  horaRapidoSelecionada = null;
+};
+
+window.confirmarAgendamentoRapido = async function(){
+  const nome = document.getElementById('mr-nome').value.trim();
+  const tel = document.getElementById('mr-tel').value.replace(/\D/g,'');
+  const servId = document.getElementById('mr-servico').value;
+  const erro = document.getElementById('mr-erro');
+  const btn = document.getElementById('mr-confirmar');
+
+  if (!nome){ erro.textContent = 'Informe o nome do cliente.'; return; }
+  if (tel.length < 8){ erro.textContent = 'Telefone inválido.'; return; }
+  const serv = servicosDisponiveis[servId];
+  if (!serv){ erro.textContent = 'Selecione um serviço.'; return; }
+
+  // Revalida: o horário ainda está livre? (evita corrida se alguém agendou junto)
+  const inicio = minutos(horaRapidoSelecionada);
+  const fim = inicio + (Number(serv.duracao)||20);
+  const conflito = ocupadosDia.some(a => {
+    const i = minutos(a.hora); const f = i + (Number(a.duracao)||20);
+    return inicio < f && fim > i;
+  });
+  if (conflito){ erro.textContent = 'Esse horário acabou de ser ocupado. Escolha outro.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  erro.textContent = '';
+
+  try {
+    const hoje = hojeStr();
+    const novaRef = push(ref(db, 'agendamentos'));
+    const ag = {
+      id: novaRef.key, agendaId: AGENDA,
+      cliente: nome, whatsapp: tel,
+      servicoId: servId, servicoNome: serv.nome,
+      valor: Number(serv.preco)||0, valorFinal: Number(serv.preco)||0, valorExtra: 0,
+      data: hoje, hora: horaRapidoSelecionada, duracao: Number(serv.duracao)||20,
+      formaPagamento: 'presencial', criadoPor: 'monitor',
+      ehPlano: false, notificado: false, timestamp: Date.now()
+    };
+    await set(novaRef, ag);
+    // dispara o webhook no mesmo formato do site
+    try {
+      await fetch('https://n8n.oreonsolucoes.dpdns.org/webhook/studio', {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify(ag)
+      });
+    } catch(e){ console.error('webhook:', e); }
+
+    fecharAgendamentoRapido();
+  } catch(e){
+    console.error(e);
+    erro.textContent = 'Erro ao salvar. Tente de novo.';
+    btn.disabled = false; btn.textContent = 'Confirmar';
+  }
+};
+
+// fecha modal ao clicar fora
+document.getElementById('modal-rapido').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-rapido') fecharAgendamentoRapido();
+});
+
+// ── Auto-scroll da fila quando não cabe tudo na tela ──
+let scrollTimer = null;
+function iniciarAutoScroll(){
+  const fila = document.getElementById('fila');
+  if (scrollTimer){ clearInterval(scrollTimer); scrollTimer = null; }
+  // só rola se o conteúdo é maior que a área visível
+  if (fila.scrollHeight <= fila.clientHeight + 8) { fila.scrollTop = 0; return; }
+
+  let dir = 1;          // 1 desce, -1 sobe
+  let pausa = 0;        // ciclos de pausa nas pontas
+  scrollTimer = setInterval(() => {
+    if (pausa > 0){ pausa--; return; }
+    const max = fila.scrollHeight - fila.clientHeight;
+    fila.scrollTop += dir * 1.2;
+    if (fila.scrollTop >= max){ fila.scrollTop = max; dir = -1; pausa = 25; } // ~2s parado embaixo
+    else if (fila.scrollTop <= 0){ fila.scrollTop = 0; dir = 1; pausa = 25; } // ~2s parado no topo
+  }, 40);
+}
+
+// re-render a cada 30s para acompanhar o tempo passar
+setInterval(render, 30000);
+</script>
+</body>
+</html>
