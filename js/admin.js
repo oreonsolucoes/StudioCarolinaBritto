@@ -445,41 +445,129 @@ if (btnTabMensagem)     btnTabMensagem.onclick     = () => gerenciarAbas('mensag
 // ---  RECESSO ---
 // --- MENSAGEM DE CONFIRMAÇÃO (editável; vai no campo "mensagem" do webhook) ---
 function iniciarMensagem() {
-  const txt = document.getElementById('msg-texto');
-  if (!txt) return;
+  const ed = document.getElementById('msg-editor');
+  if (!ed) return;
   const prev = document.getElementById('msg-preview');
   const chips = document.getElementById('msg-variaveis');
   document.getElementById('msg-agenda-nome').textContent = AGENDAS[AGENDA].nome;
+  const rotulos = Object.fromEntries(VARIAVEIS.map(v => [v.chave, v.rotulo]));
+
+  // As variáveis aparecem como "etiquetas" que não podem ser digitadas nem partidas:
+  // só se arrastam, tocam ou apagam inteiras. No banco ficam como {nome}, {servico}...
+  const criarToken = (k) => {
+    const t = document.createElement('span');
+    t.className = 'var-token'; t.contentEditable = 'false'; t.dataset.var = k; t.textContent = rotulos[k];
+    return t;
+  };
+  const paraEditor = (texto) => {
+    ed.innerHTML = '';
+    texto.split(/(\{\w+\})/g).forEach(parte => {
+      const m = /^\{(\w+)\}$/.exec(parte);
+      if (m && rotulos[m[1]]) ed.appendChild(criarToken(m[1]));
+      else if (parte) ed.appendChild(document.createTextNode(parte));
+    });
+  };
+  const paraTemplate = () => {
+    let out = '';
+    const andar = (no) => no.childNodes.forEach(c => {
+      if (c.nodeType === 3) out += c.nodeValue;
+      else if (c.nodeName === 'BR') out += '\n';
+      else if (c.dataset && c.dataset.var) out += `{${c.dataset.var}}`;
+      else { if (out && !out.endsWith('\n')) out += '\n'; andar(c); }
+    });
+    andar(ed);
+    return out.replace(/[​]/g, '').replace(/ /g, ' ');
+  };
 
   const amanha = new Date(Date.now() + 86400000).toLocaleDateString('en-CA');
   const exemplo = { cliente: 'Maria', servicoNome: 'Serviço de exemplo', data: amanha, hora: '14:00', valor: 120, agendaId: AGENDA };
   const atualizar = () => {
-    prev.textContent = renderizar(txt.value, dadosDaMensagem(exemplo));
-    document.getElementById('msg-contador').textContent = txt.value.length;
+    const t = paraTemplate();
+    prev.textContent = renderizar(t, dadosDaMensagem(exemplo));
+    document.getElementById('msg-contador').textContent = t.length;
   };
-  txt.oninput = atualizar;
+
+  // lembra onde estava o cursor (para o toque inserir no lugar certo)
+  let ultimo = null;
+  document.onselectionchange = () => {
+    const sel = window.getSelection();
+    if (sel.rangeCount && ed.contains(sel.anchorNode)) ultimo = sel.getRangeAt(0).cloneRange();
+  };
+  const fimDoTexto = () => { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); return r; };
+  const rangeDoPonto = (x, y) => {
+    let r = null;
+    if (document.caretRangeFromPoint) r = document.caretRangeFromPoint(x, y);
+    else if (document.caretPositionFromPoint) {
+      const p = document.caretPositionFromPoint(x, y);
+      if (p) { r = document.createRange(); r.setStart(p.offsetNode, p.offset); r.collapse(true); }
+    }
+    if (!r || !ed.contains(r.startContainer)) return null;
+    const tok = (r.startContainer.nodeType === 3 ? r.startContainer.parentElement : r.startContainer).closest?.('.var-token');
+    if (tok) { r.setStartAfter(tok); r.collapse(true); }
+    return r;
+  };
+  const inserir = (range, k) => {
+    const tok = criarToken(k);
+    range.deleteContents();
+    range.insertNode(tok);
+    if (!tok.nextSibling) ed.appendChild(document.createTextNode('​'));
+    const sel = window.getSelection();
+    const r = document.createRange(); r.setStartAfter(tok); r.collapse(true);
+    sel.removeAllRanges(); sel.addRange(r);
+    ultimo = r.cloneRange();
+    atualizar();
+  };
 
   chips.innerHTML = '';
   VARIAVEIS.forEach(v => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'msg-chip'; b.title = v.rotulo; b.textContent = `{${v.chave}}`;
-    b.onclick = () => {
-      const ini = txt.selectionStart ?? txt.value.length, fim = txt.selectionEnd ?? ini;
-      txt.value = txt.value.slice(0, ini) + b.textContent + txt.value.slice(fim);
-      txt.focus(); txt.selectionStart = txt.selectionEnd = ini + b.textContent.length;
-      atualizar();
-    };
-    chips.appendChild(b);
+    const chip = document.createElement('button');
+    chip.type = 'button'; chip.className = 'var-token var-chip'; chip.textContent = v.rotulo;
+    chip.title = 'Arraste para dentro do texto';
+    // Arrastar funciona com mouse e com o dedo (pointer events); um toque simples também insere.
+    chip.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const x0 = e.clientX, y0 = e.clientY;
+      let fantasma = null, moveu = false;
+      chip.setPointerCapture(e.pointerId);
+      const dentro = (ev) => { const b = ed.getBoundingClientRect(); return ev.clientX >= b.left && ev.clientX <= b.right && ev.clientY >= b.top && ev.clientY <= b.bottom; };
+      const mover = (ev) => {
+        if (!moveu && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 6) {
+          moveu = true;
+          fantasma = chip.cloneNode(true); fantasma.classList.add('msg-fantasma'); document.body.appendChild(fantasma);
+        }
+        if (fantasma) { fantasma.style.left = ev.clientX + 'px'; fantasma.style.top = ev.clientY + 'px'; ed.classList.toggle('alvo', dentro(ev)); }
+      };
+      const soltar = (ev) => {
+        chip.removeEventListener('pointermove', mover);
+        chip.removeEventListener('pointerup', soltar);
+        chip.removeEventListener('pointercancel', soltar);
+        if (fantasma) fantasma.remove();
+        ed.classList.remove('alvo');
+        if (ev.type === 'pointercancel') return;
+        if (moveu) { if (dentro(ev)) inserir(rangeDoPonto(ev.clientX, ev.clientY) || ultimo || fimDoTexto(), v.chave); }
+        else inserir(ultimo || fimDoTexto(), v.chave);
+      };
+      chip.addEventListener('pointermove', mover);
+      chip.addEventListener('pointerup', soltar);
+      chip.addEventListener('pointercancel', soltar);
+    });
+    chips.appendChild(chip);
   });
 
-  carregarTemplate(db, AGENDA).then(t => { txt.value = t; atualizar(); });
+  // Enter e colar sempre como texto simples
+  ed.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertText', false, '\n'); } };
+  ed.onpaste = (e) => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); };
+  ed.oninput = atualizar;
+
+  carregarTemplate(db, AGENDA).then(t => { paraEditor(t); atualizar(); });
 
   document.getElementById('btn-padrao-msg').onclick = () => {
-    if (confirm('Voltar ao texto padrão? (só vale depois de salvar)')) { txt.value = MENSAGEM_PADRAO; atualizar(); }
+    if (confirm('Voltar ao texto padrão? (só vale depois de salvar)')) { paraEditor(MENSAGEM_PADRAO); atualizar(); }
   };
   document.getElementById('btn-salvar-msg').onclick = async () => {
-    const texto = txt.value.trim();
+    const texto = paraTemplate().trim();
     if (!texto) return alert('A mensagem não pode ficar vazia.');
+    if (texto.length > 1200) return alert('Mensagem muito longa (máximo 1200 caracteres).');
     try {
       await set(ref(db, caminhoMensagem(AGENDA)), texto);
       const ok = document.getElementById('msg-salva');
