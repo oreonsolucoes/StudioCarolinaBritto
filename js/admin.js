@@ -5,6 +5,7 @@ import { PLANOS_ATIVOS, AGENDAS, AGENDA_PADRAO, PERMISSOES } from "./config.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, agendasPermitidas, podeAgenda, podeFinanceiro } from "./agendas.js";
 import { carregarPerfil } from "./sessao.js";
 import { ic } from "./icones.js";
+import { montarMensagem, carregarTemplate, caminhoMensagem, renderizar, dadosDaMensagem, MENSAGEM_PADRAO, VARIAVEIS } from "./mensagens.js";
 import { gravarAgendamento, removerAgendamento, novoId, atualizarDuracaoEspelho } from "./espelhos.js";
 
 // Agenda em edição e perfil do usuário (definidos após o login).
@@ -79,6 +80,8 @@ onAuthStateChanged(auth, async (user) => {
   const salva = localStorage.getItem('agendaAdmin');
   AGENDA = permitidas.includes(salva) ? salva : permitidas[0];
 
+  // A mensagem de confirmação é só da proprietária.
+  if (PERFIL.papel !== 'admin') document.getElementById('btn-mensagem')?.style.setProperty('display', 'none');
   // Perfis sem acesso financeiro não veem o botão de Gestão.
   if (!podeFinanceiro(PERFIL)) document.getElementById('btn-gestao-fin')?.style.setProperty('display', 'none');
   const btnMon = document.getElementById('btn-monitor');
@@ -390,6 +393,7 @@ const btnTabClientesBloq= document.getElementById('btn-clientes-bloq');
 const btnTabAssinaturas = document.getElementById('btn-assinaturas');
 const btnTabGerPlanos   = document.getElementById('btn-ger-planos');
 const btnTabHorarios    = document.getElementById('btn-horarios');
+const btnTabMensagem    = document.getElementById('btn-mensagem');
 // Planos desligados em js/config.js: esconde as abas de planos
 if (!PLANOS_ATIVOS) [btnTabAssinaturas, btnTabGerPlanos].forEach(b => { if (b) b.style.display = 'none'; });
 
@@ -403,7 +407,8 @@ function gerenciarAbas(abaAtiva) {
     clientes:    'sec-clientes-bloqueados',
     assinaturas: 'sec-assinaturas',
     gerplanos:   'sec-ger-planos',
-    horarios:    'sec-horarios'
+    horarios:    'sec-horarios',
+    mensagem:    'sec-mensagem'
   };
   Object.entries(secoes).forEach(([k, id]) => {
     const el = document.getElementById(id);
@@ -413,7 +418,7 @@ function gerenciarAbas(abaAtiva) {
     ag: btnTabAg, serv: btnTabServ, bloq: btnTabBloq,
     recesso: btnTabRecesso, manual: btnTabManual,
     clientes: btnTabClientesBloq, assinaturas: btnTabAssinaturas,
-    gerplanos: btnTabGerPlanos, horarios: btnTabHorarios
+    gerplanos: btnTabGerPlanos, horarios: btnTabHorarios, mensagem: btnTabMensagem
   };
   Object.entries(btns).forEach(([k, btn]) => {
     if (btn) btn.classList.toggle('active', k === abaAtiva);
@@ -423,6 +428,7 @@ function gerenciarAbas(abaAtiva) {
   if (abaAtiva === 'assinaturas') carregarAssinaturasPendentes();
   if (abaAtiva === 'gerplanos')   carregarGerenciarPlanos();
   if (abaAtiva === 'horarios')    renderizarTabelaHorarios();
+  if (abaAtiva === 'mensagem')    iniciarMensagem();
 }
 
 if (btnTabAg)           btnTabAg.onclick           = () => gerenciarAbas('ag');
@@ -434,8 +440,54 @@ if (btnTabClientesBloq) btnTabClientesBloq.onclick = () => gerenciarAbas('client
 if (btnTabAssinaturas)  btnTabAssinaturas.onclick  = () => gerenciarAbas('assinaturas');
 if (btnTabGerPlanos)    btnTabGerPlanos.onclick    = () => gerenciarAbas('gerplanos');
 if (btnTabHorarios)     btnTabHorarios.onclick     = () => gerenciarAbas('horarios');
+if (btnTabMensagem)     btnTabMensagem.onclick     = () => gerenciarAbas('mensagem');
 
 // ---  RECESSO ---
+// --- MENSAGEM DE CONFIRMAÇÃO (editável; vai no campo "mensagem" do webhook) ---
+function iniciarMensagem() {
+  const txt = document.getElementById('msg-texto');
+  if (!txt) return;
+  const prev = document.getElementById('msg-preview');
+  const chips = document.getElementById('msg-variaveis');
+  document.getElementById('msg-agenda-nome').textContent = AGENDAS[AGENDA].nome;
+
+  const amanha = new Date(Date.now() + 86400000).toLocaleDateString('en-CA');
+  const exemplo = { cliente: 'Maria', servicoNome: 'Serviço de exemplo', data: amanha, hora: '14:00', valor: 120, agendaId: AGENDA };
+  const atualizar = () => {
+    prev.textContent = renderizar(txt.value, dadosDaMensagem(exemplo));
+    document.getElementById('msg-contador').textContent = txt.value.length;
+  };
+  txt.oninput = atualizar;
+
+  chips.innerHTML = '';
+  VARIAVEIS.forEach(v => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'msg-chip'; b.title = v.rotulo; b.textContent = `{${v.chave}}`;
+    b.onclick = () => {
+      const ini = txt.selectionStart ?? txt.value.length, fim = txt.selectionEnd ?? ini;
+      txt.value = txt.value.slice(0, ini) + b.textContent + txt.value.slice(fim);
+      txt.focus(); txt.selectionStart = txt.selectionEnd = ini + b.textContent.length;
+      atualizar();
+    };
+    chips.appendChild(b);
+  });
+
+  carregarTemplate(db, AGENDA).then(t => { txt.value = t; atualizar(); });
+
+  document.getElementById('btn-padrao-msg').onclick = () => {
+    if (confirm('Voltar ao texto padrão? (só vale depois de salvar)')) { txt.value = MENSAGEM_PADRAO; atualizar(); }
+  };
+  document.getElementById('btn-salvar-msg').onclick = async () => {
+    const texto = txt.value.trim();
+    if (!texto) return alert('A mensagem não pode ficar vazia.');
+    try {
+      await set(ref(db, caminhoMensagem(AGENDA)), texto);
+      const ok = document.getElementById('msg-salva');
+      ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 3000);
+    } catch (e) { alert('Não foi possível salvar. Verifique seu acesso.'); console.error(e); }
+  };
+}
+
 const btnSalvarRecesso  = document.getElementById('btn-salvar-recesso');
 const btnRemoverRecesso = document.getElementById('btn-remover-recesso');
 const boxStatusRecesso  = document.getElementById('status-recesso-box');
@@ -645,6 +697,7 @@ function gerarHorariosManuais() {
 async function enviarParaWebhook(dados) {
   const WEBHOOK_URL = 'https://n8n.oreonsolucoes.dpdns.org/webhook/studio';
   try {
+    dados = { ...dados, mensagem: await montarMensagem(db, dados) };
     await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
   } catch (erro) { console.error("Erro webhook:", erro); }
 }
