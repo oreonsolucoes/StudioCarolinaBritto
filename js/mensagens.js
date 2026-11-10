@@ -3,13 +3,22 @@
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
 export const MENSAGEM_PADRAO =
-`Olá, {nome}! Seu agendamento no {studio} está confirmado.
+`Olá, {nome}! Tudo bem? ✨
 
-Serviço: *{servico}*
-Data: {dia}, {data}
-Horário: {hora}
+Passando para dizer que o seu momento de beleza já está reservado aqui no {studio}!
+Estamos muito felizes em cuidar de você. 🌹🌸
 
-Caso precise remarcar, avise com antecedência. Esperamos por você!`;
+Confira os detalhes da sua reserva:
+💅 *Serviço: {servico}*
+📅 *Data: {data}*
+⏰ *Horário: {hora}*
+
+📍 Onde estamos: _R. Dez de Março, 313 - Jardim Sao Salvador._
+
+Preparamos um ambiente aconchegante para que sua experiência seja única. ☕️✨
+Se precisar de qualquer ajuste, pedimos a gentileza de nos avisar com antecedência por aqui.
+
+*Estamos ansiosas pelo nosso encontro! Até logo.* 🎀✨`;
 
 export const VARIAVEIS = [
   { chave: 'nome',    rotulo: 'Nome da cliente' },
