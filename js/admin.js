@@ -5,7 +5,7 @@ import { PLANOS_ATIVOS, AGENDAS, AGENDA_PADRAO, PERMISSOES } from "./config.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, agendasPermitidas, podeAgenda, podeFinanceiro } from "./agendas.js";
 import { carregarPerfil } from "./sessao.js";
 import { ic } from "./icones.js";
-import { montarMensagem, carregarTemplate, caminhoMensagem, renderizar, dadosDaMensagem, MENSAGEM_PADRAO, VARIAVEIS } from "./mensagens.js";
+import { complementosWebhook, carregarTemplate, caminhoMensagem, renderizar, dadosDaMensagem, MENSAGEM_PADRAO, VARIAVEIS } from "./mensagens.js";
 import { gravarAgendamento, removerAgendamento, novoId, atualizarDuracaoEspelho } from "./espelhos.js";
 
 // Agenda em edição e perfil do usuário (definidos após o login).
@@ -785,7 +785,7 @@ function gerarHorariosManuais() {
 async function enviarParaWebhook(dados) {
   const WEBHOOK_URL = 'https://n8n.oreonsolucoes.dpdns.org/webhook/studio';
   try {
-    dados = { ...dados, mensagem: await montarMensagem(db, dados) };
+    dados = { ...dados, ...(await complementosWebhook(db, dados)) };
     await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
   } catch (erro) { console.error("Erro webhook:", erro); }
 }

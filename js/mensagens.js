@@ -64,6 +64,18 @@ export async function carregarTemplate(db, agendaId) {
   }
 }
 
+// Campos extras do webhook para o n8n:
+//   mensagem               texto pronto da confirmação
+//   caminho                nó do agendamento no Realtime Database
+//   campoMensagemEnviada   onde o n8n grava o texto realmente enviado (agendamentos/<id>/mensagemEnviada)
+export async function complementosWebhook(db, ag) {
+  return {
+    mensagem: await montarMensagem(db, ag),
+    caminho: `agendamentos/${ag.id}`,
+    campoMensagemEnviada: `agendamentos/${ag.id}/mensagemEnviada`,
+  };
+}
+
 export async function montarMensagem(db, ag) {
   const tpl = await carregarTemplate(db, ag.agendaId);
   return renderizar(tpl, dadosDaMensagem(ag));
