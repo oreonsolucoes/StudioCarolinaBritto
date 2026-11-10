@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebas
 import { getDatabase, ref, push, onValue, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { PLANOS_ATIVOS, AGENDAS, LACUNA_MAXIMA_MIN } from "./config.js";
 import { ic } from "./icones.js";
-import { montarMensagem } from "./mensagens.js";
+import { complementosWebhook } from "./mensagens.js";
 import { gravarAgendamento, removerAgendamento } from "./espelhos.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, horariosSugeridos } from "./agendas.js";
 
@@ -504,7 +504,7 @@ async function gerarHorarios(bloco) {
 async function enviarParaWebhook(dados) {
     try {
         // texto da confirmação (editável no painel) — o n8n envia exatamente este campo
-        dados = { ...dados, mensagem: await montarMensagem(db, dados) };
+        dados = { ...dados, ...(await complementosWebhook(db, dados)) };
         return await fetch('https://n8n.oreonsolucoes.dpdns.org/webhook/studio', {
             method: 'POST', mode: 'no-cors',
             headers: { 'ngrok-skip-browser-warning': 'true' },
