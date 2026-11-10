@@ -1,6 +1,35 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, onValue, get, push, remove, update, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getDatabase, ref, onValue, get, push, remove, update, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { PLANOS_ATIVOS, AGENDAS, AGENDA_PADRAO, PERMISSOES } from "./config.js";
+import { caminho, caminhoRecesso, agendaDoAgendamento, agendasPermitidas, podeAgenda, podeFinanceiro } from "./agendas.js";
+import { carregarPerfil } from "./sessao.js";
+
+// Agenda em edição e perfil do usuário (definidos após o login).
+let AGENDA = AGENDA_PADRAO;
+let PERFIL = null;
+const doAgenda = (ag) => agendaDoAgendamento(ag) === AGENDA;
+
+// ═══════════════════════════════════════════════════════════
+// CICLO MENSAL BASEADO NA DATA DE APROVAÇÃO
+// Retorna a chave "YYYY-MM-DD" do início do ciclo atual.
+// ═══════════════════════════════════════════════════════════
+function calcularPeriodoAtual(dataAprovacao) {
+    const agora = new Date();
+    const aprovacao = new Date(dataAprovacao);
+    const diaRenovacao = aprovacao.getDate();
+
+    let inicioCiclo = new Date(agora.getFullYear(), agora.getMonth(), diaRenovacao);
+
+    if (agora < inicioCiclo) {
+        inicioCiclo = new Date(agora.getFullYear(), agora.getMonth() - 1, diaRenovacao);
+    }
+
+    const y = inicioCiclo.getFullYear();
+    const m = String(inicioCiclo.getMonth() + 1).padStart(2, '0');
+    const d = String(inicioCiclo.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSipc3lVUGF-gTs5ktrU9G060GQ0liCBM",
@@ -18,394 +47,298 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 // --- PROTEÇÃO DE ROTA E INICIALIZAÇÃO ---
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     if (!window.location.pathname.includes("login.html")) {
       window.location.href = "login.html";
     }
-  } else {
-    // USUÁRIO LOGADO: Mostra o corpo e a seção principal
-    const body = document.getElementById('admin-body');
-    const section = document.getElementById('admin-section');
-
-    if (body) body.style.display = 'flex';
-    if (section) section.style.display = 'block'; // Adicione esta linha!
-
-    console.log("Acesso autorizado:", user.email);
-
-    carregarAgendamentos();
-    carregarServicos();
+    return;
   }
+  const body = document.getElementById('admin-body');
+  const section = document.getElementById('admin-section');
+  if (body) body.style.display = 'flex';
+  if (section) section.style.display = 'block';
+
+  PERFIL = await carregarPerfil(db, user.uid);
+  const permitidas = agendasPermitidas(PERFIL);
+  if (permitidas.length === 0) {
+    // Usuário existe no Authentication mas ainda não tem papel cadastrado em usuarios/<UID>.
+    document.querySelector('.admin-nav')?.style.setProperty('display', 'none');
+    document.querySelectorAll('.admin-container > section, .admin-container > div:not(#sem-acesso):not(#barra-agenda)')
+      .forEach(el => { el.style.display = 'none'; });
+    const aviso = document.getElementById('sem-acesso');
+    if (aviso) {
+      aviso.style.display = 'block';
+      aviso.innerHTML = `Seu acesso ainda não foi liberado.<br>Envie este código para a administradora:<br><strong>${user.uid}</strong>`;
+    }
+    return;
+  }
+
+  const salva = localStorage.getItem('agendaAdmin');
+  AGENDA = permitidas.includes(salva) ? salva : permitidas[0];
+
+  // Perfis sem acesso financeiro não veem o botão de Gestão.
+  if (!podeFinanceiro(PERFIL)) document.getElementById('btn-gestao-fin')?.style.setProperty('display', 'none');
+  const btnMon = document.getElementById('btn-monitor');
+  if (btnMon) btnMon.onclick = () => window.open(`monitor.html?agenda=${AGENDA}`, '_blank');
+
+  montarBarraAgenda(permitidas);
+  console.log("Acesso autorizado:", user.email, PERFIL.papel, AGENDA);
+  carregarAgendamentos();
+  carregarServicos();
+  iniciarNotificacoes();
+  observarRecesso();
 });
 
-// --- FUNÇÃO DE LOGOUT ---
+function montarBarraAgenda(permitidas) {
+  const barra = document.getElementById('barra-agenda');
+  const sel = document.getElementById('select-agenda');
+  const rot = document.getElementById('rotulo-papel');
+  if (!barra || !sel) return;
+  sel.innerHTML = permitidas.map(id => `<option value="${id}" ${id === AGENDA ? 'selected' : ''}>${AGENDAS[id].icone} ${AGENDAS[id].nome}</option>`).join('');
+  if (rot) rot.textContent = PERMISSOES[PERFIL.papel].nome;
+  barra.style.display = 'flex';
+  sel.onchange = () => { localStorage.setItem('agendaAdmin', sel.value); location.reload(); };
+}
+
+// --- LOGOUT ---
 const logoutBtn = document.getElementById("logout");
 if (logoutBtn) {
   logoutBtn.onclick = () => {
-    signOut(auth).then(() => {
-      window.location.href = "login.html";
-    }).catch((error) => {
-      console.error("Erro ao sair:", error);
-    });
+    signOut(auth).then(() => { window.location.href = "login.html"; })
+      .catch((error) => { console.error("Erro ao sair:", error); });
   };
 }
 
 let servicosDisponiveis = {};
 
-
 // --- SELETORES GERAIS ---
 const listaAgendamentos = document.getElementById("lista-agendamentos");
-const filtroData = document.getElementById("filtro-data");
-const buscaCliente = document.getElementById("pesquisa-cliente");
-const togglePassados = document.getElementById("toggle-passados");
-const listaServicos = document.getElementById("lista-servicos");
-const btnTabManual = document.getElementById('btn-agendar-manual');
-const formServico = document.getElementById('form-servico');
-const gradeBloqueio = document.getElementById('grade-bloqueio');
+const filtroData        = document.getElementById("filtro-data");
+const buscaCliente      = document.getElementById("pesquisa-cliente");
+const togglePassados    = document.getElementById("toggle-passados");
+const listaServicos     = document.getElementById("lista-servicos");
+const btnTabManual      = document.getElementById('btn-agendar-manual');
+const formServico       = document.getElementById('form-servico');
+const gradeBloqueio     = document.getElementById('grade-bloqueio');
 
-
-// --- SISTEMA DE ÁUDIO E DESBLOQUEIO ---
+// --- ÁUDIO ---
 const somNotificacao = new Audio('notificacao.mp3');
-
 function liberarAudio() {
   somNotificacao.play().then(() => {
     somNotificacao.pause();
     somNotificacao.currentTime = 0;
     document.removeEventListener('click', liberarAudio);
-  }).catch(() => { });
+  }).catch(() => {});
 }
 document.addEventListener('click', liberarAudio);
 
-// Data de hoje como padrão
-const hojeISO = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');;
+const hojeISO = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
 if (filtroData) filtroData.value = hojeISO;
 
 // --- 1️⃣ NOTIFICAÇÕES EM TEMPO REAL ---
 let primeiraCarga = true;
 const agendamentosRef = ref(db, "agendamentos");
 
-onChildAdded(agendamentosRef, (snapshot) => {
-  if (!primeiraCarga) {
-    const novoAg = snapshot.val();
-    exibirModalNovoAgendamento(novoAg);
-  }
-});
-
-onValue(agendamentosRef, () => { primeiraCarga = false; }, { onlyOnce: true });
+function iniciarNotificacoes() {
+  // Avisa só de agendamentos das agendas que este usuário pode ver.
+  onChildAdded(agendamentosRef, (snapshot) => {
+    if (!primeiraCarga) {
+      const novoAg = snapshot.val();
+      if (novoAg && podeAgenda(PERFIL, agendaDoAgendamento(novoAg))) exibirModalNovoAgendamento(novoAg);
+    }
+  });
+  onValue(agendamentosRef, () => { primeiraCarga = false; }, { onlyOnce: true });
+}
 
 function exibirModalNovoAgendamento(ag) {
   const modal = document.getElementById('modal-notificacao');
   if (!modal) return;
-
   const dataBR = ag.data ? ag.data.split("-").reverse().join("/") : "---";
   const valor = ag.valorFinal ?? ag.valor ?? null;
-
   document.getElementById('notif-cliente').innerText = ag.cliente || "---";
   document.getElementById('notif-servico').innerText =
-    ag.servicoNome && ag.servicoNome.trim() !== ""
-      ? ag.servicoNome
-      : "Não informado";
+    ag.servicoNome && ag.servicoNome.trim() !== "" ? ag.servicoNome : "Não informado";
   document.getElementById('notif-data').innerText = dataBR;
   document.getElementById('notif-hora').innerText = ag.hora || "---";
-
   const elValor = document.getElementById('notif-valor');
-  if (elValor && valor !== null) {
-    elValor.innerText = `R$ ${valor.toFixed(2).replace('.', ',')}`;
-  }
-
+  if (elValor && valor !== null) elValor.innerText = `R$ ${valor.toFixed(2).replace('.', ',')}`;
   modal.style.display = 'flex';
-  somNotificacao.play().catch(() => { });
-
-  setTimeout(() => {
-    modal.style.display = 'none';
-  }, 120000);
+  somNotificacao.play().catch(() => {});
+  setTimeout(() => { modal.style.display = 'none'; }, 60000);
 }
 
-
-// --- 2️⃣ CARREGAR E FILTRAR AGENDAMENTOS ---
+// --- 2️⃣ AGENDAMENTOS ---
 function carregarAgendamentos() {
   onValue(agendamentosRef, (snapshot) => {
     if (!listaAgendamentos) return;
     listaAgendamentos.innerHTML = "";
     const data = snapshot.val();
+    if (!data) return;
 
-    if (data) {
-      const dataSelecionada = filtroData.value;
-      const termoBusca = buscaCliente.value.toLowerCase();
-      const agora = new Date();
-      const minutosAtuais = (agora.getHours() * 60) + agora.getMinutes();
+    const dataSelecionada = filtroData.value;
+    const termoBusca = buscaCliente.value.toLowerCase();
+    const agora = new Date();
+    const minutosAtuais = (agora.getHours() * 60) + agora.getMinutes();
 
-      const itens = Object.entries(data)
-        .filter(([id, ag]) => {
-          if (!ag || !ag.hora || !ag.data) return false;
-          if (ag.servicoId === "bloqueio") return false;
-          const dataAg = ag.data;
-          const [hAg, mAg] = ag.hora.split(":").map(Number);
-          const minutosAg = (hAg * 60) + mAg;
-          const nomeAg = (ag.cliente || "").toLowerCase();
-          const foneAg = (ag.whatsapp || "");
+    const itens = Object.entries(data)
+      .filter(([id, ag]) => {
+        if (!ag || !ag.hora || !ag.data) return false;
+        if (ag.servicoId === "bloqueio") return false;
+        if (!doAgenda(ag)) return false;
+        const [hAg, mAg] = ag.hora.split(":").map(Number);
+        const minutosAg = (hAg * 60) + mAg;
+        const nomeAg = (ag.cliente || "").toLowerCase();
+        const foneAg = (ag.whatsapp || "");
+        const matchesData = ag.data === dataSelecionada;
+        const matchesBusca = nomeAg.includes(termoBusca) || foneAg.includes(termoBusca);
+        let matchesHorario = true;
+        if (togglePassados && togglePassados.checked && ag.data === hojeISO) {
+          matchesHorario = minutosAg >= minutosAtuais;
+        }
+        return matchesData && matchesBusca && matchesHorario;
+      })
+      .sort(([, a], [, b]) => a.hora.localeCompare(b.hora));
 
-          const matchesData = dataAg === dataSelecionada;
-          const matchesBusca = nomeAg.includes(termoBusca) || foneAg.includes(termoBusca);
+    if (itens.length === 0) {
+      listaAgendamentos.innerHTML = "<p style='text-align:center;padding:20px;opacity:0.6;'>Nenhum agendamento para este filtro.</p>";
+      return;
+    }
 
-          let matchesHorario = true;
-          if (togglePassados && togglePassados.checked) {
-            if (dataAg === hojeISO) {
-              matchesHorario = minutosAg >= minutosAtuais;
-            }
-          }
+    itens.forEach(([id, ag]) => {
+      const dataBR = ag.data.split("-").reverse().join("/");
+      const nomeServico = ag.servicoNome || ag.servico || "Bloqueio Manual";
+      const urlWhats = `https://wa.me/55${ag.whatsapp}?text=Olá! Confirmamos seu agendamento do serviço de _*${nomeServico}*_ aqui no *Studio Carolina Britto* em _${dataBR}_ às _${ag.hora}_.`;
+      const card = document.createElement("div");
+      card.className = `admin-card ${ag.cliente === "BLOQUEADO" ? "bloqueado" : ""}`;
+      const pagamentoAtual = ag.formaPagamento || "digital";
+      const nomesPagamento = { digital:"Pagamento Digital", dinheiro:"Pagamento em Dinheiro", pendente:"Pagamento Pendente" };
+      const textoExibido = nomesPagamento[pagamentoAtual] || pagamentoAtual;
+      const statusPendente = pagamentoAtual.toLowerCase() === "pendente";
+      const botaoConfirmar = statusPendente
+        ? `<button onclick="window.confirmarPagamento('${id}','${ag.cliente}')" style="background:#2ecc71;border:none;color:white;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-top:8px;font-weight:bold;display:block;">✔️ Confirmar Recebimento</button>`
+        : '';
 
-          return matchesData && matchesBusca && matchesHorario;
-        })
-        .sort(([, a], [, b]) => a.hora.localeCompare(b.hora));
+      // Badge de plano
+      const badgePlano = ag.ehPlano
+        ? `<span style="font-size:10px;background:var(--dourado);color:#000;padding:2px 7px;border-radius:10px;margin-left:6px;font-weight:bold;">PLANO</span>`
+        : '';
 
-      if (itens.length === 0) {
-        listaAgendamentos.innerHTML = "<p style='text-align:center; padding:20px; opacity:0.6;'>Nenhum agendamento para este filtro.</p>";
-        return;
-      }
-
-      
-
-      itens.forEach(([id, ag]) => {
-        const dataBR = ag.data.split("-").reverse().join("/");
-        const nomeServico = ag.servicoNome || ag.servico || "Bloqueio Manual";
-
-        const urlWhats = `https://wa.me/55${ag.whatsapp}?text=Olá! Confirmamos seu agendamento do serviço de _*${nomeServico}*_ aqui no *Studio Carolina Britto* em _${dataBR}_ às _${ag.hora}_.`;
-
-
-        const card = document.createElement("div");
-        card.className = `admin-card ${ag.cliente === "BLOQUEADO" ? "bloqueado" : ""}`;
-
-        const pagamentoAtual = ag.formaPagamento || "digital";
-        const nomesPagamento = {
-          "digital": "Pagamento Digital",
-          "dinheiro": "Pagamento em Dinheiro",
-          "pendente": "Pagamento Pendente"
-        };
-
-        // Pega o nome amigável ou usa o valor bruto se não encontrar no mapa
-        const textoExibido = nomesPagamento[pagamentoAtual] || pagamentoAtual;
-        // Lógica para mostrar o botão de confirmação apenas se estiver Pendente
-        // Usamos lowercase para garantir a comparação correta
-        const statusPendente = pagamentoAtual.toLowerCase() === "pendente";
-        const botaoConfirmar = statusPendente
-          ? `<button onclick="window.confirmarPagamento('${id}', '${ag.cliente}')" 
-            style="background:#2ecc71; border:none; color:white; padding:6px 10px; border-radius:4px; cursor:pointer; font-size:11px; margin-top:8px; font-weight:bold; display:block;">
-            ✔️ Confirmar Recebimento
-           </button>`
-          : '';
-
-        card.innerHTML = `
+      card.innerHTML = `
         <div>
-            <strong>${ag.hora} — ${ag.cliente}</strong><br>
-            <small>${ag.servicoNome || 'Bloqueio Manual'}</small><br>
-
-            <div class="dropdown-servico">
-            <button class="dropdown-btn-servico">
-              ${ag.servicoNome}
-            </button>
-
-            <div class="dropdown-menu-servico">
-              <!-- itens gerados via JS -->
+          <strong>${ag.hora} — ${ag.cliente}</strong>${badgePlano}<br>
+          <small>${nomeServico}</small><br>
+          <div class="dropdown-servico">
+            <button class="dropdown-btn-servico">${nomeServico}</button>
+            <div class="dropdown-menu-servico"></div>
+          </div>
+          <button class="btn-editar-valor" data-id="${id}">✏️ Editar Valor</button>
+          <button class="btn-nao-compareceu" data-id="${id}" data-whats="${ag.whatsapp}">NÃO COMPARECEU</button>
+        </div>
+        <div class="btns-card">
+          <div class="custom-select" data-id="${id}" data-valor="${pagamentoAtual}">
+            <div class="custom-select-trigger">💳 ${textoExibido}<span class="arrow">▾</span></div>
+            <div class="custom-options">
+              <div class="custom-option" data-value="digital">Pagamento Digital</div>
+              <div class="custom-option" data-value="dinheiro">Pagamento em Dinheiro</div>
+              <div class="custom-option" data-value="pendente">Pendente</div>
             </div>
           </div>
+          ${ag.cliente !== "BLOQUEADO" ? `<a href="${urlWhats}" target="_blank" class="btn-whatsapp">WhatsApp</a>` : ''}
+          <button class="btn-delete">Excluir</button>
+        </div>`;
 
-            <button class="btn-editar-valor" data-id="${id}">
-              ✏️ Editar Valor
-            </button>
-            <button class="btn-nao-compareceu" data-id="${id}" data-whats="${ag.whatsapp}">
-              NÃO COMPARECEU
-            </button>
-
-
-        </div>
-
-        <div class="btns-card">
-            <div class="custom-select" data-id="${id}" data-valor="${pagamentoAtual}">
-                <div class="custom-select-trigger">
-                    💳 ${textoExibido}
-                    <span class="arrow">▾</span>
-                </div>
-                <div class="custom-options">
-                    <div class="custom-option" data-value="digital">Pagamento Digital</div>
-                    <div class="custom-option" data-value="dinheiro">Pagamento em Dinheiro</div>
-                    <div class="custom-option" data-value="pendente">Pendente</div>
-                </div>
-            </div>
-            
-            ${ag.cliente !== "BLOQUEADO"
-            ? `<a href="${urlWhats}" target="_blank" class="btn-whatsapp">WhatsApp</a>`
-            : ''}
-
-            <button class="btn-delete">Excluir</button>
-        </div>
-    `;
-
-        card.querySelector(".btn-delete").onclick = () => {
-          if (confirm(`Excluir agendamento de ${ag.cliente}?`)) remove(ref(db, `agendamentos/${id}`));
-        };
-
-        listaAgendamentos.appendChild(card);
-
-        const dropdownContainer = card.querySelector('.dropdown-servico');
-        if (dropdownContainer) {
-          criarDropdownServico(
-            dropdownContainer,
-            ag.servicoNome || "Bloqueio Manual",
-            id
-          );
-
-        }
-
-      });
-    }
+      card.querySelector(".btn-delete").onclick = () => {
+        if (confirm(`Excluir agendamento de ${ag.cliente}?`)) remove(ref(db, `agendamentos/${id}`));
+      };
+      listaAgendamentos.appendChild(card);
+      const dropdownContainer = card.querySelector('.dropdown-servico');
+      if (dropdownContainer) criarDropdownServico(dropdownContainer, nomeServico, id);
+    });
   });
 }
 
 function criarDropdownServico(container, servicoAtual, agendamentoId) {
-  const btn = container.querySelector(".dropdown-btn-servico");
+  const btn  = container.querySelector(".dropdown-btn-servico");
   const menu = container.querySelector(".dropdown-menu-servico");
-
   btn.textContent = servicoAtual;
-
-  btn.onclick = () => {
-    menu.classList.toggle("ativo");
-  };
-
-  const servicosRef = ref(db, "servicos");
-
-  onValue(servicosRef, (snap) => {
+  btn.onclick = () => menu.classList.toggle("ativo");
+  onValue(ref(db, caminho("servicos", AGENDA)), (snap) => {
     menu.innerHTML = "";
-
     snap.forEach(serv => {
       const dados = serv.val();
-
       const item = document.createElement("div");
       item.textContent = `${dados.nome} - R$ ${dados.preco}`;
-
       item.onclick = async () => {
         btn.textContent = dados.nome;
         menu.classList.remove("ativo");
-
         const agRef = ref(db, `agendamentos/${agendamentoId}`);
         const snapshot = await get(agRef);
         const ag = snapshot.val();
         if (!ag) return;
-
         const valorBase = Number(dados.preco);
-
-        await update(agRef, {
-          servicoId: serv.key,
-          servicoNome: dados.nome,
-          duracao: Number(dados.duracao),
-          valor: valorBase,
-          valorFinal: valorBase,
-          valorExtra: 0
-        });
-
+        await update(agRef, { servicoId: serv.key, servicoNome: dados.nome, duracao: Number(dados.duracao), valor: valorBase, valorFinal: valorBase, valorExtra: 0 });
       };
-
       menu.appendChild(item);
     });
   });
 }
 
-
-// Fecha dropdown ao clicar fora
 document.addEventListener("click", (e) => {
   document.querySelectorAll(".dropdown-menu-servico").forEach(menu => {
-    if (!menu.parentElement.contains(e.target)) {
-      menu.classList.remove("ativo");
-    }
+    if (!menu.parentElement.contains(e.target)) menu.classList.remove("ativo");
   });
 });
 
-
-// --- 3️⃣ MODAL DE CONFIRMAÇÃO PERSONALIZADO ---
+// --- 3️⃣ MODAL DE CONFIRMAÇÃO ---
 function mostrarConfirmacao(titulo, mensagem, data, servico, acaoSim) {
   const overlay = document.getElementById('custom-confirm');
-  const txtTitulo = document.getElementById('confirm-title');
-  const txtMsg = document.getElementById('confirm-msg');
-  const txtDate = document.getElementById('confirm-date');
-  const txtServ = document.getElementById('confirm-service');
-  const btnSim = document.getElementById('confirm-yes');
-  const btnNao = document.getElementById('confirm-no');
-
   if (!overlay) return;
-
-  txtTitulo.innerText = titulo;
-  txtMsg.innerText = mensagem;
-  txtDate.innerText = data || "---";
-  txtServ.innerText = servico || "---";
+  document.getElementById('confirm-title').innerText = titulo;
+  document.getElementById('confirm-msg').innerText = mensagem;
+  document.getElementById('confirm-date').innerText = data || "---";
+  document.getElementById('confirm-service').innerText = servico || "---";
   overlay.style.display = 'flex';
-
+  const btnSim = document.getElementById('confirm-yes');
   const novoBtnSim = btnSim.cloneNode(true);
   btnSim.parentNode.replaceChild(novoBtnSim, btnSim);
-
-  novoBtnSim.onclick = () => {
-    acaoSim();
-    overlay.style.display = 'none';
-  };
-
-  btnNao.onclick = () => {
-    overlay.style.display = 'none';
-  };
+  novoBtnSim.onclick = () => { acaoSim(); overlay.style.display = 'none'; };
+  document.getElementById('confirm-no').onclick = () => { overlay.style.display = 'none'; };
 }
 
-// --- 4️⃣ GRADE DE BLOQUEIO (20 EM 20 MINUTOS) ---
+// --- 4️⃣ GRADE DE BLOQUEIO ---
 function gerarGradeBloqueio() {
   const dataSelecionada = filtroData.value;
   if (!dataSelecionada) return;
-
-  const diasSemana = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+  const diasSemana = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
   const diaNome = diasSemana[new Date(dataSelecionada + 'T00:00:00').getDay()];
-
-  onValue(ref(db, `horarios_funcionamento/${diaNome}`), (funcSnapshot) => {
+  onValue(ref(db, `${caminho("horarios_funcionamento", AGENDA)}/${diaNome}`), (funcSnapshot) => {
     const config = funcSnapshot.val();
     if (!config || config.fechado) {
-      gradeBloqueio.innerHTML = `<p style='grid-column: 1/-1; text-align:center; padding:20px; color:var(--vermelho);'>Barbearia fechada (${diaNome}).</p>`;
+      gradeBloqueio.innerHTML = `<p style='grid-column:1/-1;text-align:center;padding:20px;color:var(--vermelho);'>Studio fechado (${diaNome}).</p>`;
       return;
     }
-
     onValue(agendamentosRef, (snapshot) => {
       const agendados = snapshot.val() || {};
       gradeBloqueio.innerHTML = "";
       const dataBR = dataSelecionada.split('-').reverse().join('/');
-
       for (let h = parseInt(config.inicio); h <= parseInt(config.fim); h++) {
         for (let m = 0; m < 60; m += 10) {
-          // Trava para não passar do horário final exato (ex: não mostrar 20:10 se o fim for 20:00)  
           if (h === parseInt(config.fim) && m > 0) break;
-          const horaFormatada = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-          const agId = Object.keys(agendados).find(id => agendados[id].data === dataSelecionada && agendados[id].hora === horaFormatada);
+          const horaFormatada = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+          const agId = Object.keys(agendados).find(id => doAgenda(agendados[id]) && agendados[id].data === dataSelecionada && agendados[id].hora === horaFormatada);
           const ocupado = !!agId;
           const ehBloqueio = ocupado && agendados[agId].cliente === "BLOQUEADO";
-
           const btn = document.createElement("button");
           btn.innerText = horaFormatada;
           btn.className = ehBloqueio ? "btn-hora bloqueado-red" : (ocupado ? "btn-hora ocupado" : "btn-hora livre");
-
           btn.onclick = () => {
             if (!ocupado) {
               mostrarConfirmacao("Bloquear Horário", `Bloquear ${horaFormatada}?`, dataBR, "Bloqueio Manual", () => {
-                push(agendamentosRef, {
-                  cliente: "BLOQUEADO",
-                  data: dataSelecionada,
-                  hora: horaFormatada,
-                  whatsapp: "00000000000",
-                  servicoId: "bloqueio",
-                  servicoNome: "Bloqueio Manual",
-                  duracao: 10, // <--- ADICIONADO PARA CORRIGIR O PROBLEMA NO APP.JS
-                  valor: 0,
-                  valorFinal: 0,
-                  valorExtra: 0,
-                  formaPagamento: "bloqueio"
-                });
+                push(agendamentosRef, { agendaId:AGENDA, cliente:"BLOQUEADO", data:dataSelecionada, hora:horaFormatada, whatsapp:"00000000000", servicoId:"bloqueio", servicoNome:"Bloqueio Manual", duracao:10, valor:0, valorFinal:0, valorExtra:0, formaPagamento:"bloqueio" });
               });
             } else if (ehBloqueio) {
-              mostrarConfirmacao("Liberar Horário", `Liberar ${horaFormatada}?`, dataBR, "Bloqueio Manual", () => {
-                remove(ref(db, `agendamentos/${agId}`));
-              });
+              mostrarConfirmacao("Liberar Horário", `Liberar ${horaFormatada}?`, dataBR, "Bloqueio Manual", () => { remove(ref(db, `agendamentos/${agId}`)); });
             } else {
               alert("Horário ocupado por um cliente.");
             }
@@ -417,40 +350,28 @@ function gerarGradeBloqueio() {
   }, { onlyOnce: true });
 }
 
-// --- 5️⃣ GESTÃO DE SERVIÇOS ---
+// --- 5️⃣ SERVIÇOS ---
 function carregarServicos() {
-  onValue(ref(db, "servicos"), (snapshot) => {
+  onValue(ref(db, caminho("servicos", AGENDA)), (snapshot) => {
     if (!listaServicos) return;
     listaServicos.innerHTML = "";
     const data = snapshot.val();
     servicosDisponiveis = data;
     if (data) {
-      const ordenados = Object.entries(data).sort(([, a], [, b]) => (a.ordem || 99) - (b.ordem || 99));
+      const ordenados = Object.entries(data).sort(([,a],[,b]) => (a.ordem||99)-(b.ordem||99));
       ordenados.forEach(([id, s]) => {
         const card = document.createElement('div');
         card.className = 'servico-card';
         card.innerHTML = `
-          <div>
-            <strong>${s.ordem || '?'}. ${s.nome}</strong><br>
-            <small>R$ ${s.preco} | ${s.duracao}min</small>
-          </div>
+          <div><strong>${s.ordem||'?'}. ${s.nome}</strong><br><small>R$ ${s.preco} | ${s.duracao}min</small></div>
           <div class="btns-card">
             <button class="btn-edit-ordem" title="Mudar Posição">🔢</button>
             <button class="btn-edit-serv" title="Editar Preço">💰</button>
             <button class="btn-del-serv" title="Excluir">🗑️</button>
           </div>`;
-
-        card.querySelector('.btn-del-serv').onclick = () => {
-          if (confirm(`Excluir serviço ${s.nome}?`)) remove(ref(db, `servicos/${id}`));
-        };
-        card.querySelector('.btn-edit-serv').onclick = () => {
-          const novoPreco = prompt(`Novo preço para ${s.nome}:`, s.preco);
-          if (novoPreco) update(ref(db, `servicos/${id}`), { preco: Number(novoPreco) });
-        };
-        card.querySelector('.btn-edit-ordem').onclick = () => {
-          const novaOrdem = prompt(`Nova posição para ${s.nome}:`, s.ordem || "");
-          if (novaOrdem) update(ref(db, `servicos/${id}`), { ordem: Number(novaOrdem) });
-        };
+        card.querySelector('.btn-del-serv').onclick = () => { if (confirm(`Excluir serviço ${s.nome}?`)) remove(ref(db, `${caminho("servicos", AGENDA)}/${id}`)); };
+        card.querySelector('.btn-edit-serv').onclick = () => { const novoPreco = prompt(`Novo preço para ${s.nome}:`, s.preco); if (novoPreco) update(ref(db, `${caminho("servicos", AGENDA)}/${id}`), { preco: Number(novoPreco) }); };
+        card.querySelector('.btn-edit-ordem').onclick = () => { const novaOrdem = prompt(`Nova posição para ${s.nome}:`, s.ordem||""); if (novaOrdem) update(ref(db, `${caminho("servicos", AGENDA)}/${id}`), { ordem: Number(novaOrdem) }); };
         listaServicos.appendChild(card);
       });
     }
@@ -458,83 +379,93 @@ function carregarServicos() {
 }
 
 // --- 6️⃣ NAVEGAÇÃO ENTRE ABAS ---
-const btnTabAg = document.getElementById('btn-agendamentos');
-const btnTabServ = document.getElementById('btn-servicos');
-const btnTabBloq = document.getElementById('btn-bloqueio');
-const btnTabRecesso = document.getElementById('btn-recesso'); // Novo botão
-const btnTabClientesBloq = document.getElementById('btn-clientes-bloq');
-const btnTabHorarios = document.getElementById('btn-horarios');
+const btnTabAg          = document.getElementById('btn-agendamentos');
+const btnTabServ        = document.getElementById('btn-servicos');
+const btnTabBloq        = document.getElementById('btn-bloqueio');
+const btnTabRecesso     = document.getElementById('btn-recesso');
+const btnTabClientesBloq= document.getElementById('btn-clientes-bloq');
+const btnTabAssinaturas = document.getElementById('btn-assinaturas');
+const btnTabGerPlanos   = document.getElementById('btn-ger-planos');
+const btnTabHorarios    = document.getElementById('btn-horarios');
+// Planos desligados em js/config.js: esconde as abas de planos
+if (!PLANOS_ATIVOS) [btnTabAssinaturas, btnTabGerPlanos].forEach(b => { if (b) b.style.display = 'none'; });
 
 function gerenciarAbas(abaAtiva) {
-  document.getElementById('sec-agendamentos').style.display = abaAtiva === 'ag' ? 'block' : 'none';
-  document.getElementById('sec-servicos').style.display = abaAtiva === 'serv' ? 'block' : 'none';
-  document.getElementById('sec-bloqueio').style.display = abaAtiva === 'bloq' ? 'block' : 'none';
-  document.getElementById('sec-recesso').style.display = abaAtiva === 'recesso' ? 'block' : 'none';
-  document.getElementById('sec-agendar-manual').style.display = abaAtiva === 'manual' ? 'block' : 'none';
-  document.getElementById('sec-clientes-bloqueados').style.display = abaAtiva === 'clientes' ? 'block' : 'none';
-  document.getElementById('sec-horarios').style.display = abaAtiva === 'horarios' ? 'block' : 'none';
-    
-  btnTabManual.classList.toggle('active', abaAtiva === 'manual');
-  btnTabAg.classList.toggle('active', abaAtiva === 'ag');
-  btnTabServ.classList.toggle('active', abaAtiva === 'serv');
-  btnTabBloq.classList.toggle('active', abaAtiva === 'bloq');
-  btnTabRecesso.classList.toggle('active', abaAtiva === 'recesso');
-  btnTabClientesBloq.classList.toggle('active', abaAtiva === 'clientes');
-  btnTabHorarios.classList.toggle('active', abaAtiva === 'horarios');
-
-  if (abaAtiva === 'bloq') gerarGradeBloqueio();
-  if (abaAtiva === 'clientes') carregarClientesBloqueados();
-  if (abaAtiva === 'horarios') renderizarTabelaHorarios();
-  if (btnTabHorarios) btnTabHorarios.onclick = () => gerenciarAbas('horarios');
+  const secoes = {
+    ag:          'sec-agendamentos',
+    serv:        'sec-servicos',
+    bloq:        'sec-bloqueio',
+    recesso:     'sec-recesso',
+    manual:      'sec-agendar-manual',
+    clientes:    'sec-clientes-bloqueados',
+    assinaturas: 'sec-assinaturas',
+    gerplanos:   'sec-ger-planos',
+    horarios:    'sec-horarios'
+  };
+  Object.entries(secoes).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = k === abaAtiva ? 'block' : 'none';
+  });
+  const btns = {
+    ag: btnTabAg, serv: btnTabServ, bloq: btnTabBloq,
+    recesso: btnTabRecesso, manual: btnTabManual,
+    clientes: btnTabClientesBloq, assinaturas: btnTabAssinaturas,
+    gerplanos: btnTabGerPlanos, horarios: btnTabHorarios
+  };
+  Object.entries(btns).forEach(([k, btn]) => {
+    if (btn) btn.classList.toggle('active', k === abaAtiva);
+  });
+  if (abaAtiva === 'bloq')        gerarGradeBloqueio();
+  if (abaAtiva === 'clientes')    carregarClientesBloqueados();
+  if (abaAtiva === 'assinaturas') carregarAssinaturasPendentes();
+  if (abaAtiva === 'gerplanos')   carregarGerenciarPlanos();
+  if (abaAtiva === 'horarios')    renderizarTabelaHorarios();
 }
 
-if (btnTabAg) btnTabAg.onclick = () => gerenciarAbas('ag');
-if (btnTabServ) btnTabServ.onclick = () => gerenciarAbas('serv');
-if (btnTabBloq) btnTabBloq.onclick = () => gerenciarAbas('bloq');
-if (btnTabRecesso) btnTabRecesso.onclick = () => gerenciarAbas('recesso');
-if (btnTabManual) btnTabManual.onclick = () => { gerenciarAbas('manual'); carregarFormularioManual();};
-if (btnTabClientesBloq) { btnTabClientesBloq.onclick = () => gerenciarAbas('clientes');};
+if (btnTabAg)           btnTabAg.onclick           = () => gerenciarAbas('ag');
+if (btnTabServ)         btnTabServ.onclick         = () => gerenciarAbas('serv');
+if (btnTabBloq)         btnTabBloq.onclick         = () => gerenciarAbas('bloq');
+if (btnTabRecesso)      btnTabRecesso.onclick      = () => gerenciarAbas('recesso');
+if (btnTabManual)       btnTabManual.onclick       = () => { gerenciarAbas('manual'); carregarFormularioManual(); };
+if (btnTabClientesBloq) btnTabClientesBloq.onclick = () => gerenciarAbas('clientes');
+if (btnTabAssinaturas)  btnTabAssinaturas.onclick  = () => gerenciarAbas('assinaturas');
+if (btnTabGerPlanos)    btnTabGerPlanos.onclick    = () => gerenciarAbas('gerplanos');
+if (btnTabHorarios)     btnTabHorarios.onclick     = () => gerenciarAbas('horarios');
 
-
-// --- 7️⃣ LOGICA DO RECESSO (NOVO) ---
-const btnSalvarRecesso = document.getElementById('btn-salvar-recesso');
+// --- 7️⃣ RECESSO ---
+const btnSalvarRecesso  = document.getElementById('btn-salvar-recesso');
 const btnRemoverRecesso = document.getElementById('btn-remover-recesso');
-const boxStatusRecesso = document.getElementById('status-recesso-box');
-const textoStatusRecesso = document.getElementById('texto-status-recesso');
+const boxStatusRecesso  = document.getElementById('status-recesso-box');
+const textoStatusRecesso= document.getElementById('texto-status-recesso');
 
 if (btnSalvarRecesso) {
   btnSalvarRecesso.onclick = () => {
     const inicio = document.getElementById('recesso-inicio').value;
     const fim = document.getElementById('recesso-fim').value;
     if (!inicio || !fim) return alert("Selecione o período completo!");
-
-    update(ref(db, 'configuracoes/recesso'), { inicio, fim, ativo: true })
-      .then(() => alert("Recesso ativado com sucesso!"));
+    update(ref(db, caminhoRecesso(AGENDA)), { inicio, fim, ativo: true }).then(() => alert("Recesso ativado!"));
   };
 }
-
 if (btnRemoverRecesso) {
   btnRemoverRecesso.onclick = () => {
-    update(ref(db, 'configuracoes/recesso'), { ativo: false })
-      .then(() => alert("Recesso removido! A agenda está aberta."));
+    update(ref(db, caminhoRecesso(AGENDA)), { ativo: false }).then(() => alert("Recesso removido! Agenda aberta."));
   };
 }
-
-// Monitorar status do recesso
-onValue(ref(db, 'configuracoes/recesso'), (snapshot) => {
+function observarRecesso() {
+onValue(ref(db, caminhoRecesso(AGENDA)), (snapshot) => {
   const data = snapshot.val();
   if (data && data.ativo) {
     boxStatusRecesso.style.display = 'block';
     const dataIni = data.inicio.split('-').reverse().join('/');
     const dataFim = data.fim.split('-').reverse().join('/');
-    textoStatusRecesso.innerHTML = `STUDIO FECHADO de <strong>${dataIni}</strong> até <strong>${dataFim}</strong>.`;
+    textoStatusRecesso.innerHTML = `AGENDA FECHADA (${AGENDAS[AGENDA].nome}) de <strong>${dataIni}</strong> até <strong>${dataFim}</strong>.`;
   } else {
     boxStatusRecesso.style.display = 'none';
   }
 });
+}
 
-
-// --- 7.1 LÓGICA DE HORÁRIOS DE FUNCIONAMENTO (NOVO) ---
+// --- 7️⃣-B HORÁRIOS DE ATENDIMENTO (editor por dia da semana) ---
 const DIAS_SEMANA = [
   { key: 'dom', label: 'Domingo' },
   { key: 'seg', label: 'Segunda-feira' },
@@ -550,7 +481,7 @@ function renderizarTabelaHorarios() {
   if (!container) return;
 
   // Carrega do Firebase (mesmo nó que gerarGradeBloqueio já usa)
-  get(ref(db, 'horarios_funcionamento')).then(snap => {
+  get(ref(db, caminho('horarios_funcionamento', AGENDA))).then(snap => {
     const dados = snap.val() || {};
     container.innerHTML = '';
 
@@ -611,7 +542,7 @@ document.getElementById('btn-salvar-horarios')?.addEventListener('click', () => 
     const inicio = row.querySelector('.hora-inicio').value.split(':')[0]; // só a hora
     const fim = row.querySelector('.hora-fim').value.split(':')[0];
 
-    updates[`horarios_funcionamento/${dia}`] = {
+    updates[`${caminho('horarios_funcionamento', AGENDA)}/${dia}`] = {
       fechado: !aberto,
       inicio: Number(inicio),
       fim: Number(fim)
@@ -624,59 +555,41 @@ document.getElementById('btn-salvar-horarios')?.addEventListener('click', () => 
   });
 });
 
-
-
-
-// --- 8️⃣ FORMULÁRIO DE SERVIÇOS E FILTROS ---
+// --- 8️⃣ FORM SERVIÇOS E FILTROS ---
 if (formServico) formServico.onsubmit = (e) => {
   e.preventDefault();
-  push(ref(db, 'servicos'), {
+  push(ref(db, caminho('servicos', AGENDA)), {
     nome: document.getElementById('serv-nome').value,
     preco: Number(document.getElementById('serv-preco').value),
     duracao: Number(document.getElementById('serv-duracao').value),
     ordem: Number(document.getElementById('serv-ordem').value)
-  }).then(() => {
-    formServico.reset();
-    alert("Serviço cadastrado com sucesso!");
-  });
+  }).then(() => { formServico.reset(); alert("Serviço cadastrado!"); });
 };
-
-if (filtroData) filtroData.onchange = () => {
-  carregarAgendamentos();
-  if (document.getElementById('sec-bloqueio').style.display === 'block') gerarGradeBloqueio();
-};
-
+if (filtroData) filtroData.onchange = () => { carregarAgendamentos(); if (document.getElementById('sec-bloqueio').style.display === 'block') gerarGradeBloqueio(); };
 if (buscaCliente) buscaCliente.oninput = carregarAgendamentos;
-
 if (togglePassados) togglePassados.onchange = carregarAgendamentos;
 
-// --- 8.1 FORMULÁRIO DE AGENDAMENTO MANUAL ---
-const manualNome = document.getElementById('manual-nome');
-const manualWhats = document.getElementById('manual-whatsapp');
-const manualServicoSelect = document.getElementById('manual-servico-select');
+// --- 8.1 AGENDAMENTO MANUAL ---
+const manualNome           = document.getElementById('manual-nome');
+const manualWhats          = document.getElementById('manual-whatsapp');
+const manualServicoSelect  = document.getElementById('manual-servico-select');
 const manualServicoOptions = document.getElementById('manual-servico-options');
 let manualServicoSelecionado = null;
-const manualData = document.getElementById('manual-data');
+const manualData            = document.getElementById('manual-data');
 const manualPagamentoSelect = document.getElementById('manual-pagamento-select');
-let manualPagamentoValor = 'digital';
-const manualGrid = document.getElementById('manual-grid-horarios');
-const btnSalvarManual = document.getElementById('btn-salvar-agendamento-manual');
-
+let manualPagamentoValor    = 'digital';
+const manualGrid            = document.getElementById('manual-grid-horarios');
+const btnSalvarManual       = document.getElementById('btn-salvar-agendamento-manual');
 let horarioManualSelecionado = null;
 
-// Popular serviços
 function carregarFormularioManual() {
   if (!manualServicoOptions) return;
-
   manualServicoOptions.innerHTML = "";
   manualServicoSelecionado = null;
-
   if (!servicosDisponiveis || Object.keys(servicosDisponiveis).length === 0) {
-    manualServicoOptions.innerHTML =
-      `<div class="custom-option" data-value="">Nenhum serviço cadastrado</div>`;
+    manualServicoOptions.innerHTML = `<div class="custom-option" data-value="">Nenhum serviço cadastrado</div>`;
     return;
   }
-
   Object.entries(servicosDisponiveis).forEach(([id, s]) => {
     const opt = document.createElement('div');
     opt.className = 'custom-option';
@@ -684,11 +597,8 @@ function carregarFormularioManual() {
     opt.innerText = `${s.nome} — R$ ${s.preco}`;
     manualServicoOptions.appendChild(opt);
   });
-
-  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML =
-    `💅 Selecione o serviço <span class="arrow">▾</span>`;
+  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `💅 Selecione o serviço <span class="arrow">▾</span>`;
 }
-
 
 function paraMinutos(hora) {
   if (!hora || !hora.includes(":")) return 0;
@@ -696,48 +606,34 @@ function paraMinutos(hora) {
   return (h * 60) + m;
 }
 
-
 manualData.onchange = gerarHorariosManuais;
 
 function gerarHorariosManuais() {
   if (!manualData.value || !manualServicoSelecionado) return;
-
-
   manualGrid.innerHTML = "Carregando...";
   horarioManualSelecionado = null;
-
   onValue(ref(db, 'agendamentos'), (snapshot) => {
-    const ags = Object.values(snapshot.val() || {})
-      .filter(a => a.data === manualData.value);
-
+    const ags = Object.values(snapshot.val() || {}).filter(a => doAgenda(a) && a.data === manualData.value);
     manualGrid.innerHTML = "";
-
     for (let t = 0; t < 24 * 60; t += 10) {
       const h = String(Math.floor(t / 60)).padStart(2, '0');
       const m = String(t % 60).padStart(2, '0');
       const horaStr = `${h}:${m}`;
-
       const conflito = ags.some(a => {
         const ini = paraMinutos(a.hora);
         const dur = Number(a.duracao) || 20;
         return t < (ini + dur) && (t + 20) > ini;
       });
-
       const div = document.createElement('button');
-      div.className = conflito
-      ? 'btn-hora ocupado'
-      : 'btn-hora livre';
+      div.className = conflito ? 'btn-hora ocupado' : 'btn-hora livre';
       div.innerText = horaStr;
-
       if (!conflito) {
         div.onclick = () => {
-          document.querySelectorAll('#manual-grid-horarios .btn-hora')
-          .forEach(b => b.classList.remove('selected'));
+          document.querySelectorAll('#manual-grid-horarios .btn-hora').forEach(b => b.classList.remove('selected'));
           div.classList.add('selected');
           horarioManualSelecionado = horaStr;
         };
       }
-
       manualGrid.appendChild(div);
     }
   }, { onlyOnce: true });
@@ -745,166 +641,87 @@ function gerarHorariosManuais() {
 
 async function enviarParaWebhook(dados) {
   const WEBHOOK_URL = 'https://n8n.oreonsolucoes.dpdns.org/webhook/studio';
-
   try {
-    await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(dados)
-    });
-
-    console.log("✅ Webhook enviado");
-  } catch (erro) {
-    console.error("❌ Erro ao enviar webhook:", erro);
-  }
+    await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+  } catch (erro) { console.error("Erro webhook:", erro); }
 }
 
 btnSalvarManual.onclick = async () => {
-  if (
-    !manualNome.value ||
-    !manualWhats.value ||
-    !manualServicoSelecionado ||
-    !manualData.value ||
-    !horarioManualSelecionado
-  ) {
+  if (!manualNome.value || !manualWhats.value || !manualServicoSelecionado || !manualData.value || !horarioManualSelecionado) {
     return alert("Preencha todos os campos e selecione o horário.");
   }
-
   const serv = servicosDisponiveis[manualServicoSelecionado];
   if (!serv) return alert("Serviço inválido.");
-
   const valorBase = Number(serv.preco);
-
   const novoAgendamento = {
-  cliente: manualNome.value,
-  whatsapp: manualWhats.value.replace(/\D/g, ''),
-  servicoId: manualServicoSelecionado,
-  servicoNome: serv.nome,
-  valor: valorBase,
-  valorFinal: valorBase,
-  valorExtra: 0,
-  data: manualData.value,
-  hora: horarioManualSelecionado,
-  duracao: Number(serv.duracao),
-  formaPagamento: manualPagamentoValor,
-  criadoPor: "barbeiro",
-  agendamentoExtra: true,
-  timestamp: Date.now()
+    agendaId: AGENDA, cliente: manualNome.value, whatsapp: manualWhats.value.replace(/\D/g, ''),
+    servicoId: manualServicoSelecionado, servicoNome: serv.nome,
+    valor: valorBase, valorFinal: valorBase, valorExtra: 0,
+    data: manualData.value, hora: horarioManualSelecionado, duracao: Number(serv.duracao),
+    formaPagamento: manualPagamentoValor, criadoPor: "barbeiro", agendamentoExtra: true, timestamp: Date.now()
   };
-  
   await push(ref(db, 'agendamentos'), novoAgendamento);
-  
   await enviarParaWebhook(novoAgendamento);
-
   alert("Agendamento criado com sucesso!");
-
-  manualNome.value = "";
-  manualWhats.value = "";
-  manualServicoSelecionado = null;
-  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML =
-    `✂️ Selecione o serviço <span class="arrow">▾</span>`;
-  manualData.value = "";
-  manualGrid.innerHTML = "";
+  manualNome.value = ""; manualWhats.value = ""; manualServicoSelecionado = null;
+  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `💅 Selecione o serviço <span class="arrow">▾</span>`;
+  manualData.value = ""; manualGrid.innerHTML = "";
 };
 
-
-// --- 8.2 SELECT CUSTOMIZADO (FORMA DE PAGAMENTO) ---
+// --- 8.2 SELECTS CUSTOMIZADOS ---
 document.addEventListener('click', (e) => {
-  document.querySelectorAll('.custom-select').forEach(sel => {
-    if (!sel.contains(e.target)) sel.classList.remove('open');
-  });
-
+  document.querySelectorAll('.custom-select').forEach(sel => { if (!sel.contains(e.target)) sel.classList.remove('open'); });
   const trigger = e.target.closest('.custom-select-trigger');
   if (!trigger) return;
-
-  const select = trigger.parentElement;
-  select.classList.toggle('open');
+  trigger.parentElement.classList.toggle('open');
 });
 
 document.addEventListener('click', (e) => {
   const option = e.target.closest('.custom-option');
   if (!option) return;
-
   const select = option.closest('.custom-select');
   if (!select) return;
-
-  // ignora select do agendamento manual
   if (select.id === 'manual-pagamento-select') return;
-
   if (!select.dataset.id) return;
-
-
   const agendamentoId = select.dataset.id;
   const valor = option.dataset.value;
-
-  select.querySelector('.custom-select-trigger').innerHTML =
-    `💳 ${option.innerText} <span class="arrow">▾</span>`;
-
+  select.querySelector('.custom-select-trigger').innerHTML = `💳 ${option.innerText} <span class="arrow">▾</span>`;
   select.classList.remove('open');
-
-  update(ref(db, `agendamentos/${agendamentoId}`), {
-    formaPagamento: valor
-  });
+  update(ref(db, `agendamentos/${agendamentoId}`), { formaPagamento: valor });
 });
 
-// --- SELECT CUSTOMIZADO - SERVIÇO (AGENDAMENTO MANUAL) ---
 document.addEventListener('click', (e) => {
   const option = e.target.closest('#manual-servico-options .custom-option');
   if (!option) return;
-
   manualServicoSelecionado = option.dataset.value;
-
   const serv = servicosDisponiveis[manualServicoSelecionado];
-
-  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML =
-    `✂️ ${serv.nome} <span class="arrow">▾</span>`;
-
+  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `💅 ${serv.nome} <span class="arrow">▾</span>`;
   manualServicoSelect.classList.remove('open');
-
   gerarHorariosManuais();
 });
 
-// --- SELECT CUSTOMIZADO - PAGAMENTO (AGENDAMENTO MANUAL) ---
 document.addEventListener('click', (e) => {
-  const option = e.target.closest(
-    '#manual-pagamento-select .custom-option'
-  );
+  const option = e.target.closest('#manual-pagamento-select .custom-option');
   if (!option) return;
-
   manualPagamentoValor = option.dataset.value;
-
-  manualPagamentoSelect.querySelector('.custom-select-trigger').innerHTML =
-    `💳 ${option.innerText} <span class="arrow">▾</span>`;
-
+  manualPagamentoSelect.querySelector('.custom-select-trigger').innerHTML = `💳 ${option.innerText} <span class="arrow">▾</span>`;
   manualPagamentoSelect.classList.remove('open');
 });
 
-// --- FUNÇÃO PARA CONFIRMAR PAGAMENTO (BOTÃO DO BARBEIRO) ---
-window.confirmarPagamento = function (idAgendamento, nomeCliente) {
-  const modal = document.getElementById('modal-confirmar-pagamento');
-  const txtNome = document.getElementById('nome-cliente-confirm');
-  const btnDigital = document.getElementById('btn-pago-digital');
-  const btnDinheiro = document.getElementById('btn-pago-dinheiro');
-  const btnCancelar = document.getElementById('btn-cancelar-pagamento');
-
+// --- CONFIRMAR PAGAMENTO ---
+window.confirmarPagamento = function(idAgendamento, nomeCliente) {
+  const modal     = document.getElementById('modal-confirmar-pagamento');
+  const txtNome   = document.getElementById('nome-cliente-confirm');
+  const btnDigital= document.getElementById('btn-pago-digital');
+  const btnDinheiro=document.getElementById('btn-pago-dinheiro');
+  const btnCancelar=document.getElementById('btn-cancelar-pagamento');
   if (!modal) return;
-
   txtNome.innerText = nomeCliente;
   modal.style.display = 'flex';
-
-  // Função interna para disparar o update no Firebase
   const atualizarStatus = (novoStatus) => {
-    update(ref(db, `agendamentos/${idAgendamento}`), {
-      formaPagamento: novoStatus
-    }).then(() => {
-      modal.style.display = 'none';
-      // O carregarAgendamentos() será chamado automaticamente pelo onValue do Firebase
-    });
+    update(ref(db, `agendamentos/${idAgendamento}`), { formaPagamento: novoStatus }).then(() => { modal.style.display = 'none'; });
   };
-
-  btnDigital.onclick = () => atualizarStatus('digital');
+  btnDigital.onclick  = () => atualizarStatus('digital');
   btnDinheiro.onclick = () => atualizarStatus('dinheiro');
   btnCancelar.onclick = () => modal.style.display = 'none';
 };
@@ -912,113 +729,375 @@ window.confirmarPagamento = function (idAgendamento, nomeCliente) {
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('.btn-editar-valor');
   if (!btn) return;
-
   const agendamentoId = btn.dataset.id;
-  if (!agendamentoId) {
-    console.error("ID do agendamento não encontrado no botão.");
-    return;
-  }
-
+  if (!agendamentoId) return;
   const agRef = ref(db, `agendamentos/${agendamentoId}`);
-
   const snapshot = await get(agRef);
   const ag = snapshot.val();
   if (!ag) return;
-
-  // 🔹 valor atual: prioriza valorFinal, depois valor
   const valorAtual = ag.valorFinal ?? ag.valor ?? 0;
-
-  const novoValor = prompt(
-    "Informe o valor TOTAL do atendimento:",
-    valorAtual
-  );
-
+  const novoValor = prompt("Informe o valor TOTAL do atendimento:", valorAtual);
   if (novoValor === null) return;
-
   const valorFinal = Number(novoValor);
-
-  if (isNaN(valorFinal) || valorFinal < 0) {
-    alert("Valor inválido.");
-    return;
-  }
-
+  if (isNaN(valorFinal) || valorFinal < 0) return alert("Valor inválido.");
   const valorBase = Number(ag.valor) || 0;
-  const valorExtra = valorFinal - valorBase;
-
-  await update(agRef, {
-    valorFinal: valorFinal,
-    valorExtra: valorExtra
-  });
-
-  alert("Valor atualizado com sucesso!");
+  await update(agRef, { valorFinal, valorExtra: valorFinal - valorBase });
+  alert("Valor atualizado!");
 });
-
-
 
 document.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('btn-nao-compareceu')) return;
-
   const id = e.target.dataset.id;
   const telefone = e.target.dataset.whats;
-
   if (!confirm("Marcar como NÃO COMPARECEU e bloquear cliente?")) return;
-
-  // Marca visualmente
   e.target.classList.add("bloqueado");
-
-  // Salva bloqueio
-  await update(ref(db, `clientesBloqueados/${telefone}`), {
-    nome: "Cliente bloqueado",
-    telefone: telefone,
-    motivo: "Não compareceu",
-    bloqueadoEm: Date.now()
-  });
-
-
-  // Atualiza agendamento
-  await update(ref(db, `agendamentos/${id}`), {
-    status: "nao_compareceu"
-  });
-
-  alert("Cliente bloqueado. Só poderá agendar manualmente.");
+  await update(ref(db, `clientesBloqueados/${telefone}`), { nome:"Cliente bloqueado", telefone, motivo:"Não compareceu", bloqueadoEm: Date.now() });
+  await update(ref(db, `agendamentos/${id}`), { status:"nao_compareceu" });
+  alert("Cliente bloqueado.");
 });
 
+// --- CLIENTES BLOQUEADOS ---
 function carregarClientesBloqueados() {
   const lista = document.getElementById('listaClientesBloqueados');
   lista.innerHTML = '';
-
   onValue(ref(db, 'clientesBloqueados'), snap => {
     lista.innerHTML = '';
-
     snap.forEach(child => {
       const c = child.val();
-
       const card = document.createElement('div');
       card.className = 'card-bloqueado';
-
-      card.innerHTML = `
-        <strong>${c.nome}</strong><br>
-        <small>${child.key}</small><br>
-        <small>${c.motivo}</small>
-        <button onclick="desbloquearCliente('${child.key}')">
-          Desbloquear
-        </button>
-      `;
-
+      card.innerHTML = `<strong>${c.nome}</strong><br><small>${child.key}</small><br><small>${c.motivo}</small><button onclick="desbloquearCliente('${child.key}')">Desbloquear</button>`;
       lista.appendChild(card);
     });
   });
 }
-window.desbloquearCliente = function (telefone) {
-  remove(ref(db, `clientesBloqueados/${telefone}`));
+window.desbloquearCliente = function(telefone) { remove(ref(db, `clientesBloqueados/${telefone}`)); };
+
+// ═══════════════════════════════════════════════════════════
+// --- 9️⃣ ASSINATURAS PENDENTES (NOVA ABA) ---
+// ═══════════════════════════════════════════════════════════
+function carregarAssinaturasPendentes() {
+  const lista = document.getElementById('lista-assinaturas-pendentes');
+  if (!lista) return;
+  lista.innerHTML = '<p style="opacity:.6;text-align:center;padding:20px;">Carregando...</p>';
+
+  onValue(ref(db, 'assinaturas'), (snap) => {
+    lista.innerHTML = '';
+    const dados = snap.val();
+    if (!dados) {
+      lista.innerHTML = '<p style="opacity:.6;text-align:center;padding:20px;">Nenhuma assinatura encontrada.</p>';
+      return;
+    }
+
+    const lista_arr = Object.entries(dados).sort(([,a],[,b]) => (b.criadoEm||0) - (a.criadoEm||0));
+
+    lista_arr.forEach(([tel, ass]) => {
+      const card = document.createElement('div');
+      const statusColor = ass.status === 'ativo' ? '#2ecc71' : ass.status === 'pendente' ? '#f39c12' : '#e74c3c';
+      const statusLabel = ass.status === 'ativo' ? '✅ Ativo' : ass.status === 'pendente' ? '⏳ Pendente' : '❌ Inativo';
+      const criado = ass.criadoEm ? new Date(ass.criadoEm).toLocaleDateString('pt-BR') : '—';
+
+      // Contagem de usos no ciclo atual (baseado na data de aprovação)
+      const periodoAtual = ass.dataAprovacao
+          ? calcularPeriodoAtual(ass.dataAprovacao)
+          : new Date().toISOString().slice(0, 7);
+
+      let usosTexto = '';
+      if (ass.isFlex && ass.servicosFlex) {
+          const partes = Object.entries(ass.servicosFlex).map(([key, sf]) => {
+              const usos = (ass.usosFlexNoMes?.[periodoAtual]?.[key]) || 0;
+              return `${sf.nome}: ${usos}/${sf.maxUsos || 2}`;
+          });
+          usosTexto = partes.join(' | ');
+      } else {
+          const usos = (ass.usosNoMes && ass.usosNoMes[periodoAtual]) || 0;
+          const max = ass.maxUsosMes || 4;
+          usosTexto = `${usos}/${max}`;
+      }
+
+      card.style.cssText = `background:rgba(255,255,255,.05);border:1px solid #333;border-left:4px solid ${statusColor};border-radius:8px;padding:16px;margin-bottom:12px;`;
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div>
+            <strong style="color:#fff;font-size:1rem;">${ass.nome || '—'}</strong>
+            <span style="font-size:11px;background:${statusColor};color:#000;padding:2px 8px;border-radius:10px;margin-left:8px;font-weight:bold;">${statusLabel}</span><br>
+            <small style="color:#aaa;">📞 ${tel} | Plano: <strong style="color:var(--dourado);">${ass.planoNome || '—'}</strong></small><br>
+            <small style="color:#888;">Cadastrado: ${criado} | Usos neste ciclo: ${usosTexto}</small><br>
+            ${ass.adicionais && ass.adicionais.length ? `<small style="color:#aaa;">Adicionais: ${ass.adicionais.join(', ')}</small>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:130px;">
+            ${ass.status === 'pendente' ? `
+              <button onclick="aprovarAssinatura('${tel}')" style="background:#2ecc71;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">✅ Aprovar</button>
+              <button onclick="rejeitarAssinatura('${tel}')" style="background:#e74c3c;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">❌ Rejeitar</button>
+            ` : ''}
+            ${ass.status === 'ativo' ? `
+              <button onclick="inativarAssinatura('${tel}')" style="background:#e67e22;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">⏸ Inativar</button>
+              <button onclick="ativarAssinatura('${tel}')" style="background:#3498db;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">🔄 Renovar mês</button>
+            ` : ''}
+            ${ass.status === 'inativo' ? `
+              <button onclick="ativarAssinatura('${tel}')" style="background:#2ecc71;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">▶ Reativar</button>
+            ` : ''}
+            <button onclick="editarUsosAssinatura('${tel}')" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;">✏️ Editar Usos</button>
+            <button onclick="excluirAssinatura('${tel}')" style="background:transparent;border:1px solid #555;color:#888;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;">🗑 Excluir</button>
+          </div>
+        </div>`;
+      lista.appendChild(card);
+    });
+  });
+}
+
+window.editarUsosAssinatura = async function(tel) {
+  const snap = await get(ref(db, `assinaturas/${tel}`));
+  if (!snap.exists()) return alert('Assinatura não encontrada.');
+  const ass = snap.val();
+
+  const periodoAtual = ass.dataAprovacao
+    ? calcularPeriodoAtual(ass.dataAprovacao)
+    : new Date().toISOString().slice(0, 7);
+
+  // Remove modal anterior se existir
+  const modalAntigo = document.getElementById('modal-editar-usos');
+  if (modalAntigo) modalAntigo.remove();
+
+  let camposUsos = '';
+
+  if (ass.isFlex && ass.servicosFlex) {
+    // Plano Flex — um campo por serviço
+    camposUsos = Object.entries(ass.servicosFlex).map(([key, sf]) => {
+      const usos = (ass.usosFlexNoMes?.[periodoAtual]?.[key]) || 0;
+      return `
+        <div style="margin-bottom:12px;">
+          <label style="color:#ccc;font-size:13px;display:block;margin-bottom:4px;">${sf.nome} (máx. ${sf.maxUsos || 2})</label>
+          <input type="number" id="uso-flex-${key}" value="${usos}" min="0" max="${sf.maxUsos || 99}"
+            style="width:100%;padding:8px;border-radius:6px;border:1px solid #555;background:#2b1a10;color:#fff;font-size:14px;box-sizing:border-box;">
+        </div>`;
+    }).join('');
+  } else {
+    // Plano normal — único campo
+    const usos = (ass.usosNoMes && ass.usosNoMes[periodoAtual]) || 0;
+    const max = ass.maxUsosMes || 4;
+    camposUsos = `
+      <div style="margin-bottom:12px;">
+        <label style="color:#ccc;font-size:13px;display:block;margin-bottom:4px;">Usos neste ciclo (máx. ${max})</label>
+        <input type="number" id="uso-normal" value="${usos}" min="0" max="${max}"
+          style="width:100%;padding:8px;border-radius:6px;border:1px solid #555;background:#2b1a10;color:#fff;font-size:14px;box-sizing:border-box;">
+      </div>`;
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-editar-usos';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.innerHTML = `
+    <div style="background:#2b1a10;border:1px solid var(--dourado);border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+      <h3 style="color:var(--dourado);margin:0 0 4px;">✏️ Editar Usos</h3>
+      <p style="color:#aaa;font-size:13px;margin:0 0 16px;">${ass.nome || tel} · Ciclo: ${periodoAtual}</p>
+      ${camposUsos}
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button id="btn-salvar-usos" style="flex:1;background:var(--dourado);border:none;color:#000;padding:10px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">💾 Salvar</button>
+        <button onclick="document.getElementById('modal-editar-usos').remove()" style="flex:1;background:transparent;border:1px solid #555;color:#aaa;padding:10px;border-radius:8px;cursor:pointer;font-size:14px;">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  document.getElementById('btn-salvar-usos').onclick = async () => {
+    if (ass.isFlex && ass.servicosFlex) {
+      const updates = {};
+      for (const [key] of Object.entries(ass.servicosFlex)) {
+        const val = parseInt(document.getElementById(`uso-flex-${key}`)?.value || '0', 10);
+        updates[`assinaturas/${tel}/usosFlexNoMes/${periodoAtual}/${key}`] = isNaN(val) ? 0 : val;
+      }
+      await update(ref(db), updates);
+    } else {
+      const val = parseInt(document.getElementById('uso-normal')?.value || '0', 10);
+      await update(ref(db, `assinaturas/${tel}/usosNoMes`), {
+        [periodoAtual]: isNaN(val) ? 0 : val
+      });
+    }
+    modal.remove();
+    alert('✅ Usos atualizados com sucesso!');
+  };
+
+  // Fecha ao clicar fora
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 };
 
+window.aprovarAssinatura = async function(tel) {
+  if (!confirm(`Aprovar assinatura de ${tel}?`)) return;
+  await update(ref(db, `assinaturas/${tel}`), {
+    status: 'ativo',
+    dataAprovacao: Date.now(),
+    cobrancaNoMes: {}
+  });
+  alert('Assinatura aprovada! O cliente já pode agendar pelo plano.');
+};
 
-// Atualização automática a cada 1 hora (3600000 ms)
-setInterval(() => {
-  carregarAgendamentos();
-}, 3600000);
+window.rejeitarAssinatura = async function(tel) {
+  if (!confirm(`Rejeitar assinatura de ${tel}? Isso vai remover o registro.`)) return;
+  await remove(ref(db, `assinaturas/${tel}`));
+  alert('Assinatura rejeitada e removida.');
+};
 
+window.inativarAssinatura = async function(tel) {
+  if (!confirm(`Inativar plano de ${tel}?`)) return;
+  await update(ref(db, `assinaturas/${tel}`), { status: 'inativo' });
+};
+
+window.ativarAssinatura = async function(tel) {
+  const mesAtual = new Date().toISOString().slice(0,7);
+  await update(ref(db, `assinaturas/${tel}`), {
+    status: 'ativo',
+    dataAprovacao: Date.now(),
+    [`usosNoMes/${mesAtual}`]: 0
+  });
+  alert('Plano reativado / mês renovado!');
+};
+
+window.excluirAssinatura = async function(tel) {
+  if (!confirm(`Excluir completamente a assinatura de ${tel}?`)) return;
+  await remove(ref(db, `assinaturas/${tel}`));
+};
+
+// ═══════════════════════════════════════════════════════════
+// --- 🔟 GERENCIAR PLANOS (NOVA ABA) ---
+// ═══════════════════════════════════════════════════════════
+let planosDisponiveis = {};
+let servicosParaPlanos = {};
+
+// Carrega serviços para o select do formulário de plano
+onValue(ref(db, 'servicos'), snap => { servicosParaPlanos = snap.val() || {}; });
+
+function carregarGerenciarPlanos() {
+  const lista = document.getElementById('lista-planos-admin');
+  if (!lista) return;
+
+  onValue(ref(db, 'planos'), (snap) => {
+    planosDisponiveis = snap.val() || {};
+    lista.innerHTML = '';
+
+    if (!snap.val()) {
+      lista.innerHTML = '<p style="opacity:.6;text-align:center;padding:20px;">Nenhum plano cadastrado ainda.</p>';
+      return;
+    }
+
+    const ordenados = Object.entries(planosDisponiveis).sort(([,a],[,b]) => (a.ordem||99) - (b.ordem||99));
+
+    ordenados.forEach(([id, plano]) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.3);border-radius:10px;padding:16px;margin-bottom:12px;';
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div>
+            <strong style="color:var(--dourado);font-size:1rem;">${plano.nome}</strong>
+            ${plano.destaque ? '<span style="font-size:10px;background:var(--dourado);color:#000;padding:2px 8px;border-radius:10px;margin-left:6px;">Destaque</span>' : ''}<br>
+            <small style="color:#ccc;">${plano.descricao || ''}</small><br>
+            <small style="color:#aaa;">R$ ${Number(plano.preco).toFixed(2)} | Adicionais: ${(plano.adicionais||[]).join(', ') || '—'}</small><br>
+            <small style="color:#888;">Benefícios: ${(plano.beneficios||[]).join('; ') || '—'}</small>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="editarPlano('${id}')" style="background:#3498db;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;">✏️ Editar</button>
+            <button onclick="excluirPlano('${id}')" style="background:#e74c3c;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;">🗑 Excluir</button>
+          </div>
+        </div>`;
+      lista.appendChild(card);
+    });
+  });
+}
+
+// Abre formulário de novo plano
+document.getElementById('btn-novo-plano')?.addEventListener('click', () => {
+  limparFormPlano();
+  document.getElementById('form-plano-wrapper').style.display = 'block';
+  document.getElementById('form-plano-wrapper').scrollIntoView({ behavior: 'smooth' });
+});
+
+function limparFormPlano() {
+  document.getElementById('plano-edit-id').value = '';
+  document.getElementById('plano-nome').value = '';
+  document.getElementById('plano-desc').value = '';
+  document.getElementById('plano-preco').value = '';
+  document.getElementById('plano-ordem').value = '';
+  document.getElementById('plano-destaque').checked = false;
+  document.getElementById('plano-beneficios').value = '';
+  renderizarCheckboxAdicionais([]);
+}
+
+function renderizarCheckboxAdicionais(selecionados = []) {
+  // Adicionais que podem ser incluídos em um plano. A lista da Barbearia (Barba, Bigode...) não se aplica ao Studio;
+  // preencher quando o cliente definir quais adicionais existem. Vazio = o plano não oferece adicional.
+  const ADICIONAIS_FIXOS = [];
+  const container = document.getElementById('plano-adicionais-checks');
+  if (!container) return;
+  container.innerHTML = ADICIONAIS_FIXOS.length ? '' : '<small style="opacity:.6;">Nenhum adicional configurado.</small>';
+  ADICIONAIS_FIXOS.forEach(ad => {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin:4px 8px 4px 0;color:#ccc;font-size:.85rem;cursor:pointer;';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.value = ad;
+    chk.checked = selecionados.includes(ad);
+    label.appendChild(chk);
+    label.appendChild(document.createTextNode(ad));
+    container.appendChild(label);
+  });
+}
+
+// Editar plano existente
+window.editarPlano = function(id) {
+  const plano = planosDisponiveis[id];
+  if (!plano) return;
+  document.getElementById('plano-edit-id').value = id;
+  document.getElementById('plano-nome').value = plano.nome || '';
+  document.getElementById('plano-desc').value = plano.descricao || '';
+  document.getElementById('plano-preco').value = plano.preco || '';
+  document.getElementById('plano-ordem').value = plano.ordem || '';
+  document.getElementById('plano-destaque').checked = !!plano.destaque;
+  document.getElementById('plano-beneficios').value = (plano.beneficios||[]).join('\n');
+  renderizarCheckboxAdicionais(plano.adicionais || []);
+  document.getElementById('form-plano-wrapper').style.display = 'block';
+  document.getElementById('form-plano-wrapper').scrollIntoView({ behavior: 'smooth' });
+};
+
+window.excluirPlano = async function(id) {
+  if (!confirm('Excluir este plano?')) return;
+  await remove(ref(db, `planos/${id}`));
+};
+
+// Salvar plano (criar ou editar)
+document.getElementById('btn-salvar-plano')?.addEventListener('click', async () => {
+  const editId    = document.getElementById('plano-edit-id').value;
+  const nome      = document.getElementById('plano-nome').value.trim();
+  const descricao = document.getElementById('plano-desc').value.trim();
+  const preco     = Number(document.getElementById('plano-preco').value);
+  const ordem     = Number(document.getElementById('plano-ordem').value) || 99;
+  const destaque  = document.getElementById('plano-destaque').checked;
+  const beneficios= document.getElementById('plano-beneficios').value.split('\n').map(b=>b.trim()).filter(Boolean);
+  const adicionais= Array.from(document.querySelectorAll('#plano-adicionais-checks input:checked')).map(c=>c.value);
+
+  if (!nome || !preco) return alert('Preencha pelo menos nome e preço.');
+
+  const dados = { nome, descricao, preco, ordem, destaque, beneficios, adicionais, maxUsosMes: 4 };
+
+  if (editId) {
+    await update(ref(db, `planos/${editId}`), dados);
+    alert('Plano atualizado!');
+  } else {
+    await push(ref(db, 'planos'), dados);
+    alert('Plano criado!');
+  }
+  document.getElementById('form-plano-wrapper').style.display = 'none';
+  limparFormPlano();
+});
+
+document.getElementById('btn-cancelar-plano')?.addEventListener('click', () => {
+  document.getElementById('form-plano-wrapper').style.display = 'none';
+  limparFormPlano();
+});
+
+// Inicializa os checkboxes ao carregar a página
+renderizarCheckboxAdicionais([]);
+
+// --- INTERVALO DE ATUALIZAÇÃO ---
+setInterval(() => { carregarAgendamentos(); }, 3600000);
 
 window.gerenciarAbas = gerenciarAbas;
 window.carregarAgendamentos = carregarAgendamentos;

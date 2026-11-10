@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planos Mensais — Studio Carolina Britto</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    .planos-hero { text-align:center; margin-bottom:32px; }
+    .planos-hero h2 { font-family:'Cinzel Decorative',serif; color:var(--dourado); font-size:1.6rem; margin-bottom:8px; }
+    .planos-hero p  { font-size:.95rem; opacity:.8; max-width:360px; margin:0 auto; }
+
+    .planos-grid {
+      display:flex; flex-direction:column; gap:20px;
+      width:100%; max-width:480px; margin:0 auto;
+    }
+
+    .plano-card {
+      background:rgba(38,24,15,.92);
+      border:1px solid rgba(212,175,55,.35);
+      border-radius:14px;
+      padding:24px 22px;
+      transition:.3s;
+    }
+    .plano-card:hover { border-color:var(--dourado); transform:translateY(-2px); }
+    .plano-card.destaque { border-color:var(--dourado); box-shadow:0 0 20px rgba(212,175,55,.25); }
+
+    .plano-badge {
+      display:inline-block; font-size:.7rem; background:var(--dourado); color:#000;
+      padding:2px 10px; border-radius:20px; font-weight:600;
+      text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;
+    }
+    .plano-nome  { font-family:'Cinzel Decorative',serif; color:var(--dourado); font-size:1.2rem; margin-bottom:6px; }
+    .plano-desc  { font-size:.85rem; opacity:.75; margin-bottom:14px; line-height:1.5; }
+    .plano-beneficios { list-style:none; padding:0; margin:0 0 16px; }
+    .plano-beneficios li { font-size:.85rem; padding:4px 0; opacity:.9; }
+    .plano-beneficios li::before { content:"✓ "; color:var(--dourado); font-weight:bold; }
+    .plano-preco {
+      font-size:1.8rem; font-weight:700; color:#fff;
+      margin-bottom:16px;
+    }
+    .plano-preco span { font-size:.9rem; font-weight:300; opacity:.7; }
+
+    .btn-assinar {
+      width:100%; padding:12px;
+      background:var(--dourado); border:none; border-radius:8px;
+      color:#000; font-size:1rem; font-weight:600; cursor:pointer;
+      transition:.3s; text-transform:uppercase; letter-spacing:1px;
+    }
+    .btn-assinar:hover { background:#e0c157; transform:translateY(-1px); }
+
+    /* Modal de assinatura */
+    .modal-plano { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88);
+      justify-content:center; align-items:center; z-index:9000; padding:20px; }
+    .modal-plano.ativo { display:flex; }
+
+    .modal-plano-box {
+      background:#2b1a10; border:1px solid var(--dourado); border-radius:16px;
+      padding:30px 24px; width:100%; max-width:420px;
+      max-height:90vh; overflow-y:auto;
+    }
+    .modal-plano-box h2 { font-family:'Cinzel Decorative',serif; color:var(--dourado);
+      font-size:1.1rem; margin-bottom:6px; }
+    .modal-plano-box p.sub { font-size:.82rem; opacity:.7; margin-bottom:20px; }
+
+    .modal-plano-box label { display:block; color:var(--dourado); font-size:.85rem;
+      margin-top:14px; margin-bottom:4px; font-weight:500; }
+    .modal-plano-box input {
+      width:100%; padding:10px 12px; border-radius:7px; border:1px solid #444;
+      background:#3b2718; color:#fff; font-size:.95rem; outline:none;
+    }
+    .modal-plano-box input:focus { border-color:var(--dourado); }
+
+    /* Pix box */
+    .pix-box {
+      display:none; background:rgba(212,175,55,.08);
+      border:1px dashed var(--dourado); border-radius:10px;
+      padding:18px; text-align:center; margin-top:20px;
+    }
+    .pix-box.ativo { display:block; }
+    .pix-box h3 { color:var(--dourado); font-size:1rem; margin-bottom:10px; }
+    .pix-chave {
+      background:#3b2718; border:1px solid #555; border-radius:6px;
+      padding:10px 14px; font-size:.9rem; color:#fff;
+      word-break:break-all; margin:8px 0 12px; cursor:pointer;
+      transition:.2s;
+    }
+    .pix-chave:hover { border-color:var(--dourado); }
+    .pix-instrucao { font-size:.8rem; opacity:.75; line-height:1.5; margin-bottom:14px; }
+
+    .btn-whatsapp-comp {
+      display:block; width:100%; padding:12px;
+      background:#25d366; border:none; border-radius:8px;
+      color:#fff; font-size:.95rem; font-weight:600;
+      cursor:pointer; text-decoration:none; text-align:center;
+      transition:.3s; margin-top:6px;
+    }
+    .btn-whatsapp-comp:hover { background:#1fba59; }
+
+    .btn-voltar {
+      display:block; text-align:center; margin:8px auto 0;
+      background:transparent; border:none; color:#888;
+      font-size:.85rem; cursor:pointer; text-decoration:underline;
+    }
+
+    .btn-enviar-form {
+      width:100%; padding:12px; margin-top:18px;
+      background:var(--dourado); border:none; border-radius:8px;
+      color:#000; font-size:1rem; font-weight:600;
+      cursor:pointer; transition:.3s;
+    }
+    .btn-enviar-form:hover { background:#e0c157; }
+
+    .msg-sucesso {
+      display:none; background:rgba(46,204,113,.15); border:1px solid #2ecc71;
+      border-radius:8px; padding:14px; text-align:center;
+      color:#2ecc71; font-size:.9rem; margin-top:16px;
+    }
+    .msg-sucesso.ativo { display:block; }
+
+    .btn-fechar-modal {
+      width:100%; padding:10px; margin-top:10px;
+      background:transparent; border:1px solid #444; border-radius:8px;
+      color:#888; font-size:.85rem; cursor:pointer; transition:.3s;
+    }
+    .btn-fechar-modal:hover { border-color:var(--dourado); color:var(--dourado); }
+
+    .voltar-link {
+      display:block; text-align:center; margin:28px 0 0;
+      color:var(--dourado); font-size:.85rem; text-decoration:none; opacity:.75;
+    }
+    .voltar-link:hover { opacity:1; }
+  </style>
+  <script type="module">
+    import { PLANOS_ATIVOS } from "./js/config.js";
+    if (!PLANOS_ATIVOS) location.replace("index.html");
+  </script>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <header>
+    <h1 class="titulo">Studio Carolina Britto</h1>
+    <p class="subtitulo">Planos Mensais</p>
+  </header>
+
+  <div class="planos-hero">
+    <h2>Clube de Membros</h2>
+    <p>Frequência garantida, economia real. Escolha o plano ideal para o seu estilo.</p>
+  </div>
+
+  <div class="planos-grid" id="planos-grid">
+    <p style="text-align:center;opacity:.6;">Carregando planos...</p>
+  </div>
+
+  <a href="index.html" class="voltar-link">← Voltar para agendamentos</a>
+
+  <!-- Modal de assinatura -->
+  <div class="modal-plano" id="modal-assinatura">
+    <div class="modal-plano-box">
+      <h2 id="modal-plano-nome">Assinar Plano</h2>
+      <p class="sub">Preencha seus dados e efetue o pagamento via Pix.</p>
+
+      <label>Nome</label>
+      <input type="text" id="ass-nome" placeholder="Seu nome completo">
+
+      <label>Sobrenome</label>
+      <input type="text" id="ass-sobrenome" placeholder="Seu sobrenome">
+
+      <label>WhatsApp (com DDD)</label>
+      <input type="tel" id="ass-telefone" placeholder="(11) 99999-9999"
+        oninput="
+          let v=this.value.replace(/\D/g,'');
+          if(v.length>11)v=v.slice(0,11);
+          if(v.length>10){v=v.replace(/^(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');}
+          else if(v.length>6){v=v.replace(/^(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');}
+          else if(v.length>2){v=v.replace(/^(\d{2})(\d{0,5})/,'($1) $2');}
+          else if(v.length>0){v=v.replace(/^(\d*)/,'($1');}
+          this.value=v;">
+
+      <button class="btn-enviar-form" id="btn-ir-pix">Ver Pix e Finalizar</button>
+
+      <!-- Pix box — aparece após preencher o form -->
+      <div class="pix-box" id="pix-box">
+        <h3>💰 Pagamento via Pix</h3>
+        <p style="font-size:.8rem;opacity:.75;margin-bottom:8px;">
+          Valor: <strong id="pix-valor-txt">—</strong>
+        </p>
+        <p style="font-size:.8rem;opacity:.75;margin-bottom:4px;">Chave Pix (clique para copiar):</p>
+                <div class="pix-chave" id="pix-chave-txt" onclick="copiarChavePix(this)"></div>
+        <p class="pix-instrucao">
+          Após realizar o pagamento, envie o comprovante no WhatsApp abaixo.
+          Seu plano será ativado após confirmação manual pelo Studio.
+        </p>
+        <a id="btn-whats-comp" href="#" target="_blank" class="btn-whatsapp-comp">
+          📲 Enviar comprovante no WhatsApp
+        </a>
+        <p style="font-size:.75rem;opacity:.6;margin-top:10px;">
+          Seu cadastro já foi registrado como <strong>pendente</strong>.<br>
+          Aguarde a confirmação do Studio.
+        </p>
+      </div>
+
+      <div class="msg-sucesso" id="msg-sucesso">
+        ✅ Cadastro enviado! Aguarde a confirmação do Studio via WhatsApp.
+      </div>
+
+      <button class="btn-fechar-modal" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getDatabase, ref, onValue, push, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyBSipc3lVUGF-gTs5ktrU9G060GQ0liCBM",
+  authDomain: "studio-manicure-f909f.firebaseapp.com",
+  databaseURL: "https://studio-manicure-f909f-default-rtdb.firebaseio.com",
+  projectId: "studio-manicure-f909f",
+  storageBucket: "studio-manicure-f909f.firebasestorage.app",
+  messagingSenderId: "257743931123",
+  appId: "1:257743931123:web:d68421b2e04cb4cb9b5986",
+  measurementId: "G-TD79VEFQG5"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    const WHATSAPP_STUDIO = "5511988523575";
+    // Chave Pix do Studio (celular). Se ficar vazia, a página não aceita cadastros.
+    const CHAVE_PIX_STUDIO = "+5511988523575";
+    document.getElementById('pix-chave-txt').textContent = CHAVE_PIX_STUDIO;
+
+    let planoSelecionado = null;
+    let assinaturaJaRegistrada = false;
+
+    // --- CARREGAR PLANOS DO FIREBASE ---
+    onValue(ref(db, 'planos'), (snap) => {
+      const grid = document.getElementById('planos-grid');
+      const dados = snap.val();
+
+      if (!dados) {
+        grid.innerHTML = "<p style='text-align:center;opacity:.6;'>Nenhum plano disponível no momento.</p>";
+        return;
+      }
+
+      grid.innerHTML = '';
+      const lista = Object.entries(dados).sort(([,a],[,b]) => (a.ordem||99) - (b.ordem||99));
+
+      lista.forEach(([id, plano]) => {
+        const card = document.createElement('div');
+        card.className = `plano-card${plano.destaque ? ' destaque' : ''}`;
+
+        const beneficiosHtml = (plano.beneficios || [])
+          .map(b => `<li>${b}</li>`).join('');
+
+        const adicionaisTexto = (plano.adicionais || []).length > 0
+          ? `<li>Adicional incluso: ${(plano.adicionais || []).join(', ')}</li>`
+          : '';
+
+        card.innerHTML = `
+          ${plano.destaque ? '<span class="plano-badge">Mais popular</span>' : ''}
+          <div class="plano-nome">${plano.nome}</div>
+          <div class="plano-desc">${plano.descricao || ''}</div>
+          <ul class="plano-beneficios">
+            ${beneficiosHtml}
+            ${adicionaisTexto}
+          </ul>
+          <div class="plano-preco">R$ ${Number(plano.preco).toFixed(2).replace('.',',')} <span>/mês</span></div>
+          <button class="btn-assinar" data-id="${id}">Assinar este plano</button>
+        `;
+
+        card.querySelector('.btn-assinar').onclick = () => abrirModal(id, plano);
+        grid.appendChild(card);
+      });
+    });
+
+    // --- ABRIR MODAL ---
+    window.abrirModal = function(id, plano) {
+      planoSelecionado = { id, ...plano };
+      assinaturaJaRegistrada = false;
+
+      document.getElementById('modal-plano-nome').textContent = `Assinar: ${plano.nome}`;
+      document.getElementById('pix-valor-txt').textContent =
+        `R$ ${Number(plano.preco).toFixed(2).replace('.',',')}`;
+      document.getElementById('ass-nome').value = '';
+      document.getElementById('ass-sobrenome').value = '';
+      document.getElementById('ass-telefone').value = '';
+      document.getElementById('pix-box').classList.remove('ativo');
+      document.getElementById('msg-sucesso').classList.remove('ativo');
+      document.getElementById('modal-assinatura').classList.add('ativo');
+    };
+
+    // --- IR PARA PIX (valida form e registra no Firebase) ---
+    document.getElementById('btn-ir-pix').onclick = async () => {
+      if (!CHAVE_PIX_STUDIO) return alert('O pagamento por Pix ainda não está disponível. Fale com o Studio pelo WhatsApp.');
+      const nome      = document.getElementById('ass-nome').value.trim();
+      const sobrenome = document.getElementById('ass-sobrenome').value.trim();
+      const tel       = document.getElementById('ass-telefone').value.replace(/\D/g,'');
+
+      if (!nome || !sobrenome) return alert('Preencha nome e sobrenome.');
+      if (tel.length < 10) return alert('Informe um WhatsApp válido com DDD.');
+      if (!planoSelecionado) return;
+
+      // Verifica se já tem assinatura ativa
+      const snapExist = await get(ref(db, `assinaturas/${tel}`));
+      if (snapExist.exists()) {
+        const atual = snapExist.val();
+        if (atual.status === 'ativo') {
+          return alert(`Você já possui o plano "${atual.planoNome}" ativo!`);
+        }
+        if (atual.status === 'pendente') {
+          return alert('Você já possui um cadastro pendente de aprovação. Aguarde o Studio confirmar.');
+        }
+      }
+
+      if (!assinaturaJaRegistrada) {
+        assinaturaJaRegistrada = true;
+
+        // Salva assinatura pendente no Firebase
+        await push(ref(db, 'assinaturasPendentes'), {
+          telefone: tel,
+          nome: `${nome} ${sobrenome}`,
+          planoId: planoSelecionado.id,
+          planoNome: planoSelecionado.nome,
+          planoPreco: planoSelecionado.preco,
+          adicionais: planoSelecionado.adicionais || [],
+          servicoId: planoSelecionado.servicoId || null,
+          status: 'pendente',
+          criadoEm: Date.now()
+        });
+
+        // Salva também no nó assinaturas indexado por telefone
+        const { set } = await import("https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js");
+        const { ref: dbRef } = await import("https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js");
+        await set(dbRef(db, `assinaturas/${tel}`), {
+          telefone: tel,
+          nome: `${nome} ${sobrenome}`,
+          planoId: planoSelecionado.id,
+          planoNome: planoSelecionado.nome,
+          planoPreco: planoSelecionado.preco,
+          adicionais: planoSelecionado.adicionais || [],
+          servicoId: planoSelecionado.servicoId || null,
+          maxUsosMes: Number(planoSelecionado.maxUsosMes) || 4,
+          status: 'pendente',
+          criadoEm: Date.now(),
+          usosNoMes: {},
+          cobrancaNoMes: {},
+          isFlex: planoSelecionado.isFlex || false,
+          servicosFlex: planoSelecionado.servicosFlex || null,
+          usosFlexNoMes: {}
+        });
+      }
+
+      // Monta link do WhatsApp
+      const msgWpp = encodeURIComponent(
+        `Olá! Me chamo *${nome} ${sobrenome}* e acabei de me cadastrar no *${planoSelecionado.nome}* do Studio Carolina Britto.\n\nSegue o comprovante do Pix no valor de *R$ ${Number(planoSelecionado.preco).toFixed(2).replace('.',',')}* 👇`
+      );
+      document.getElementById('btn-whats-comp').href =
+        `https://wa.me/${WHATSAPP_STUDIO}?text=${msgWpp}`;
+
+      document.getElementById('pix-box').classList.add('ativo');
+      document.getElementById('msg-sucesso').classList.add('ativo');
+      document.getElementById('btn-ir-pix').style.display = 'none';
+    };
+
+    // --- FECHAR MODAL ---
+    window.fecharModal = function() {
+      document.getElementById('modal-assinatura').classList.remove('ativo');
+      document.getElementById('btn-ir-pix').style.display = 'block';
+    };
+
+    // --- COPIAR CHAVE PIX ---
+    window.copiarChavePix = function(el) {
+      navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+        const orig = el.textContent;
+        el.textContent = '✅ Copiado!';
+        setTimeout(() => el.textContent = orig, 2000);
+      });
+    };
+
+    // Fechar modal clicando fora
+    document.getElementById('modal-assinatura').addEventListener('click', function(e) {
+      if (e.target === this) fecharModal();
+    });
+  </script>
+</body>
+</html>

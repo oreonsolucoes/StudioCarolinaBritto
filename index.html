@@ -9,6 +9,7 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500&family=Cinzel+Decorative:wght@700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/cards.css" />
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 </head>
 
@@ -18,10 +19,30 @@
   <header>
     <h1 class="titulo">Studio Carolina Britto</h1>
     <p class="subtitulo">✨ Sua melhor experiência em beleza começa aqui</p>
+
+    <div id="wrap-planos" style="margin-top: 12px; display: none;">
+      <a href="planos.html" class="btn-planos-header">
+        ⭐ Planos Mensais — Assine e economize
+      </a>
+    </div>
   </header>
 
   <main class="container">
-    <form id="bookingForm" class="form-box">
+    <section id="escolha-agenda" class="escolha-agenda">
+      <h2 class="escolha-titulo">O que você deseja agendar?</h2>
+      <a class="escolha-card" href="index.html?agenda=unhas">
+        <span class="escolha-icone">💅</span>
+        <span class="escolha-nome">Unhas</span>
+        <span class="escolha-desc">Nail design e estética feminina</span>
+      </a>
+      <a class="escolha-card" href="index.html?agenda=cabelo">
+        <span class="escolha-icone">💇‍♀️</span>
+        <span class="escolha-nome">Cabelo</span>
+        <span class="escolha-desc">Serviços de cabelo</span>
+      </a>
+    </section>
+    <form id="bookingForm" class="form-box" style="display:none;">
+      <a href="index.html" id="link-trocar-agenda" class="link-trocar-agenda">← Trocar: <span id="nome-agenda-atual"></span></a>
       <div id="container-agendamentos">
         <div class="bloco-agendamento" id="agendamento-1">
           <h3>Seu Agendamento</h3>
@@ -29,7 +50,26 @@
           <input type="text" class="cliente-nome" placeholder="Seu nome" required>
 
           <label>WhatsApp</label>
-          <input type="tel" class="cliente-whatsapp" placeholder="DDD + TELEFONE" required>
+          <input type="tel"
+             class="cliente-whatsapp"
+             placeholder="DDD + TELEFONE"
+             minlength="14"
+             maxlength="15"
+             required
+             oninput="
+               let v = this.value.replace(/\D/g, '');
+               if (v.length > 11) v = v.slice(0, 11);
+               if (v.length > 10) {
+                 v = v.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+               } else if (v.length > 6) {
+                 v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+               } else if (v.length > 2) {
+                 v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+               } else if (v.length > 0) {
+                 v = v.replace(/^(\d*)/, '($1');
+               }
+               this.value = v;
+             ">
 
           <label>Serviço</label>
           <select class="cliente-servico" required>
@@ -54,6 +94,74 @@
         Agendamento(s)</button>
     </form>
   </main>
+
+  <div class="secao-cards">
+
+    <!-- INSTAGRAM -->
+    <div class="info-card">
+      <div class="card-header">
+        <span class="card-header-icon">📸</span>
+        <h3>Siga a Gente</h3>
+      </div>
+      <a class="instagram-handle" href="https://www.instagram.com/studiocarolinabritto/" target="_blank" rel="noopener">
+        <div class="ig-avatar">💅</div>
+        <div class="ig-info">
+          <div class="ig-name">Studio Carolina Britto</div>
+          <div class="ig-user">@studiocarolinabritto</div>
+        </div>
+      </a>
+      <a class="btn-seguir-ig" href="https://www.instagram.com/studiocarolinabritto/" target="_blank" rel="noopener">
+        📷 Seguir no Instagram
+      </a>
+    </div>
+
+    <!-- QUEM SOMOS -->
+    <div class="info-card">
+      <div class="card-header">
+        <span class="card-header-icon">✨</span>
+        <h3>Quem Somos</h3>
+      </div>
+      <div class="sobre-body">
+        <img class="sobre-foto" src="img/quem-somos.webp" width="124" height="124" loading="lazy"
+          alt="Studio Carolina Britto">
+        <div class="sobre-texto">
+          <p class="sobre-lema">Mais do que beleza, uma experiência única.</p>
+          <p>O <strong>Studio Carolina Britto</strong> nasceu em 2024 em Taboão da Serra com um propósito:
+            cuidar de cada cliente com atenção, delicadeza e acabamento impecável. Trabalhamos com
+            <strong>nail design</strong>, <strong>estética feminina</strong> e <strong>serviços de cabelo</strong>,
+            sempre num ambiente acolhedor, pensado para você relaxar e sair se sentindo ainda mais bonita.</p>
+          <span class="sobre-desde">⭐ Desde 2024 · Taboão da Serra – SP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCALIZAÇÃO -->
+    <div class="info-card">
+      <div class="card-header">
+        <span class="card-header-icon">📍</span>
+        <h3>Nossa Localização</h3>
+      </div>
+      <div class="mapa-wrapper">
+        <iframe title="Localização do Studio Carolina Britto"
+          src="https://maps.google.com/maps?q=R.+Dez+de+Mar%C3%A7o,+313,+Jardim+S%C3%A3o+Salvador,+Tabo%C3%A3o+da+Serra,+SP,+06775-370&output=embed&z=16"
+          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+      </div>
+      <div class="mapa-endereco">
+        <span class="mapa-pin">🗺️</span>
+        <div class="mapa-txt">
+          <strong>Studio Carolina Britto</strong>
+          <small>R. Dez de Março, 313<br>Jardim São Salvador · Taboão da Serra – SP<br>CEP 06775-370</small>
+        </div>
+      </div>
+      <a class="btn-rota"
+        href="https://www.google.com/maps/dir/?api=1&destination=R.+Dez+de+Mar%C3%A7o,+313,+Jardim+S%C3%A3o+Salvador,+Tabo%C3%A3o+da+Serra,+SP,+06775-370"
+        target="_blank" rel="noopener">
+        🧭 Traçar Rota
+      </a>
+    </div>
+
+  </div>
 
   <div style="text-align: center; margin: 20px 0;">
     <button id="btn-abrir-gestao" class="btn-secundario">Reagendamento ou Desistência</button>
@@ -116,6 +224,28 @@
 
   <a href="login.html" class="btn-admin" title="Painel do Barbeiro">🔒</a>
   
+  <style>
+    .btn-planos-header {
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(212,175,55,.2), rgba(212,175,55,.08));
+      border: 1px solid rgba(212,175,55,.6);
+      color: var(--dourado);
+      padding: 9px 20px;
+      border-radius: 25px;
+      font-size: .85rem;
+      font-weight: 500;
+      text-decoration: none;
+      letter-spacing: .5px;
+      transition: .3s;
+      font-family: 'Poppins', sans-serif;
+    }
+    .btn-planos-header:hover {
+      background: rgba(212,175,55,.25);
+      box-shadow: 0 0 16px rgba(212,175,55,.3);
+      transform: translateY(-1px);
+    }
+  </style>
+
   <script type="module" src="js/app.js"></script>
   
 </body>

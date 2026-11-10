@@ -2,6 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebas
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 // ADICIONE ESTA IMPORTAÇÃO:
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { carregarPerfil } from "./sessao.js";
+import { podeFinanceiro } from "./agendas.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBSipc3lVUGF-gTs5ktrU9G060GQ0liCBM",
@@ -19,10 +21,18 @@ const db = getDatabase(app);
 const auth = getAuth(app); // Inicializa a autenticação
 
 // --- PROTEÇÃO DE ROTA ---
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = "login.html";
-    } else {
+        return;
+    }
+    // Tela financeira: somente perfis com permissão (proprietária).
+    const perfil = await carregarPerfil(db, user.uid);
+    if (!podeFinanceiro(perfil)) {
+        window.location.href = "admin.html";
+        return;
+    }
+    {
         // Se o usuário estiver logado, mostramos o conteúdo
         // Certifique-se de que o <body> do gestao.html tenha id="gestao-body"
         const body = document.getElementById('gestao-body');
