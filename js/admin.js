@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 import { PLANOS_ATIVOS, AGENDAS, AGENDA_PADRAO, PERMISSOES } from "./config.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, agendasPermitidas, podeAgenda, podeFinanceiro } from "./agendas.js";
 import { carregarPerfil } from "./sessao.js";
+import { gravarAgendamento, removerAgendamento, novoId, atualizarDuracaoEspelho } from "./espelhos.js";
 
 // Agenda em edição e perfil do usuário (definidos após o login).
 let AGENDA = AGENDA_PADRAO;
@@ -249,7 +250,7 @@ function carregarAgendamentos() {
         </div>`;
 
       card.querySelector(".btn-delete").onclick = () => {
-        if (confirm(`Excluir agendamento de ${ag.cliente}?`)) remove(ref(db, `agendamentos/${id}`));
+        if (confirm(`Excluir agendamento de ${ag.cliente}?`)) removerAgendamento(db, id, ag);
       };
       listaAgendamentos.appendChild(card);
       const dropdownContainer = card.querySelector('.dropdown-servico');
@@ -278,6 +279,7 @@ function criarDropdownServico(container, servicoAtual, agendamentoId) {
         if (!ag) return;
         const valorBase = Number(dados.preco);
         await update(agRef, { servicoId: serv.key, servicoNome: dados.nome, duracao: Number(dados.duracao), valor: valorBase, valorFinal: valorBase, valorExtra: 0 });
+        await atualizarDuracaoEspelho(db, agendamentoId, { ...ag, servicoNome: dados.nome }, dados.duracao);
       };
       menu.appendChild(item);
     });
@@ -335,10 +337,10 @@ function gerarGradeBloqueio() {
           btn.onclick = () => {
             if (!ocupado) {
               mostrarConfirmacao("Bloquear Horário", `Bloquear ${horaFormatada}?`, dataBR, "Bloqueio Manual", () => {
-                push(agendamentosRef, { agendaId:AGENDA, cliente:"BLOQUEADO", data:dataSelecionada, hora:horaFormatada, whatsapp:"00000000000", servicoId:"bloqueio", servicoNome:"Bloqueio Manual", duracao:10, valor:0, valorFinal:0, valorExtra:0, formaPagamento:"bloqueio" });
+                gravarAgendamento(db, novoId(db), { agendaId:AGENDA, cliente:"BLOQUEADO", data:dataSelecionada, hora:horaFormatada, whatsapp:"00000000000", servicoId:"bloqueio", servicoNome:"Bloqueio Manual", duracao:10, valor:0, valorFinal:0, valorExtra:0, formaPagamento:"bloqueio", criadoPor:"equipe" });
               });
             } else if (ehBloqueio) {
-              mostrarConfirmacao("Liberar Horário", `Liberar ${horaFormatada}?`, dataBR, "Bloqueio Manual", () => { remove(ref(db, `agendamentos/${agId}`)); });
+              mostrarConfirmacao("Liberar Horário", `Liberar ${horaFormatada}?`, dataBR, "Bloqueio Manual", () => { removerAgendamento(db, agId, agendados[agId]); });
             } else {
               alert("Horário ocupado por um cliente.");
             }
@@ -660,7 +662,9 @@ btnSalvarManual.onclick = async () => {
     data: manualData.value, hora: horarioManualSelecionado, duracao: Number(serv.duracao),
     formaPagamento: manualPagamentoValor, criadoPor: "barbeiro", agendamentoExtra: true, timestamp: Date.now()
   };
-  await push(ref(db, 'agendamentos'), novoAgendamento);
+  const idNovo = novoId(db);
+  novoAgendamento.id = idNovo;
+  await gravarAgendamento(db, idNovo, novoAgendamento);
   await enviarParaWebhook(novoAgendamento);
   alert("Agendamento criado com sucesso!");
   manualNome.value = ""; manualWhats.value = ""; manualServicoSelecionado = null;

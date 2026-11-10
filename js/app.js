@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { PLANOS_ATIVOS, AGENDAS, LACUNA_MAXIMA_MIN } from "./config.js";
+import { gravarAgendamento, removerAgendamento } from "./espelhos.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, horariosSugeridos } from "./agendas.js";
 
 // ── Agenda escolhida (?agenda=unhas|cabelo). Sem parâmetro: mostra a tela de escolha. ──
@@ -459,8 +460,9 @@ async function gerarHorarios(bloco) {
     const ehHoje = dataAg === agora.toLocaleDateString('en-CA');
     const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
-    onValue(ref(db, 'agendamentos'), (snapshot) => {
-        const ags = Object.values(snapshot.val() || {}).filter(a => a.data === dataAg && agendaDoAgendamento(a) === AGENDA_ATUAL);
+    // Lê só a ocupação do dia desta agenda (público, sem dados pessoais).
+    onValue(ref(db, `ocupacao/${AGENDA_ATUAL}/${dataAg}`), (snapshot) => {
+        const ags = Object.values(snapshot.val() || {});
         grid.innerHTML = "";
 
         const abertura = paraMinutos(config.inicio);
@@ -688,7 +690,7 @@ btnConfirmarTudo.onclick = async (e) => {
             data: ag.data.split('/').reverse().join('-'),
             notificado: false
         };
-        await set(novaRef, agParaFirebase);
+        await gravarAgendamento(db, novaRef.key, agParaFirebase);
         await enviarParaWebhook(agParaFirebase);
     }
 
@@ -704,19 +706,20 @@ btnAbrirGestao.onclick = () => {
 btnBuscarGestao.onclick = () => {
     const tel = document.getElementById('busca-tel-gestao').value.replace(/\D/g, '');
     if (!tel) return;
-    onValue(ref(db, 'agendamentos'), (snapshot) => {
+    // Busca pelo telefone no resumo público (a lista completa de agendamentos é restrita à equipe).
+    onValue(ref(db, `agendamentosPorTelefone/${tel}`), (snapshot) => {
         const ags = snapshot.val() || {};
         const resultado = document.getElementById('resultado-gestao');
         resultado.innerHTML = "";
         Object.entries(ags).forEach(([id, ag]) => {
-            if (ag.whatsapp === tel) {
+            if (ag && ag.data) {
                 const item = document.createElement('div');
                 item.className = 'item-gestao';
                 item.innerHTML = `
           <p><strong>${ag.data.split('-').reverse().join('/')} às ${ag.hora}</strong><br>${ag.servicoNome || ag.servico} <small>(${AGENDAS[agendaDoAgendamento(ag)].nome})</small></p>
           <div class="acoes-gestao">
-            <button class="btn-reagendar" onclick="window.processarAcao('${id}','reagendar','${ag.cliente}','${ag.whatsapp}')">Reagendar</button>
-            <button class="btn-desistir"  onclick="window.processarAcao('${id}','excluir')">Desistir</button>
+            <button class="btn-reagendar" onclick="window.processarAcao('${id}','reagendar','${ag.cliente}','${tel}','${ag.agendaId || 'unhas'}','${ag.data}')">Reagendar</button>
+            <button class="btn-desistir"  onclick="window.processarAcao('${id}','excluir','','${tel}','${ag.agendaId || 'unhas'}','${ag.data}')">Desistir</button>
           </div>`;
                 resultado.appendChild(item);
             }
@@ -724,8 +727,8 @@ btnBuscarGestao.onclick = () => {
     }, { onlyOnce: true });
 };
 
-window.processarAcao = (id, tipo, nome = '', whatsapp = '') => {
-    remove(ref(db, `agendamentos/${id}`)).then(() => {
+window.processarAcao = (id, tipo, nome = '', whatsapp = '', agendaId = 'unhas', data = '') => {
+    removerAgendamento(db, id, { agendaId, data, whatsapp }).then(() => {
         if (modalGestao) modalGestao.style.display = 'none';
         const mc = document.getElementById('modal-cancelamento');
         if (mc) {

@@ -302,6 +302,10 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { gravarAgendamento } from "./js/espelhos.js";
+import { carregarPerfil } from "./js/sessao.js";
+import { podeAgenda } from "./js/agendas.js";
 import { AGENDAS } from "./js/config.js";
 import { caminho, agendaValida, agendaDoAgendamento } from "./js/agendas.js";
 
@@ -366,7 +370,8 @@ onValue(ref(db, caminho('horarios_funcionamento', AGENDA)), (snap) => {
   render();
 }, (err) => console.error(err));
 
-// escuta o Firebase
+// escuta o Firebase (só depois do login: agendamentos é restrito à equipe)
+function ouvirAgendamentos(){
 onValue(ref(db, 'agendamentos'), (snap) => {
   marcarConexao(true);
   const dados = snap.val() || {};
@@ -379,6 +384,17 @@ onValue(ref(db, 'agendamentos'), (snap) => {
   agendamentosDia = doDia.filter(a => a.cliente !== 'BLOQUEADO');
   render();
 }, (err) => { console.error(err); marcarConexao(false); });
+}
+
+onAuthStateChanged(getAuth(app), async (user) => {
+  if (!user) {
+    location.href = 'login.html?next=' + encodeURIComponent('monitor.html?agenda=' + AGENDA);
+    return;
+  }
+  const perfil = await carregarPerfil(db, user.uid);
+  if (!podeAgenda(perfil, AGENDA)) { location.href = 'admin.html'; return; }
+  ouvirAgendamentos();
+});
 
 function marcarConexao(ok){
   const el = document.getElementById('conexao');
@@ -620,7 +636,7 @@ window.confirmarAgendamentoRapido = async function(){
       formaPagamento: 'presencial', criadoPor: 'monitor',
       ehPlano: false, notificado: false, timestamp: Date.now()
     };
-    await set(novaRef, ag);
+    await gravarAgendamento(db, novaRef.key, ag);
     // dispara o webhook no mesmo formato do site
     try {
       await fetch('https://n8n.oreonsolucoes.dpdns.org/webhook/studio', {
