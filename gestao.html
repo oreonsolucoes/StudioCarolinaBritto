@@ -48,12 +48,13 @@
             color: #ffffff;
         }
     </style>
+  <link rel="stylesheet" href="css/icones.css">
 </head>
 
 <body id="gestao-body" style="display: none;">
     <div class="admin-container">
         <header>
-            <h1>📊 Gestão e Relatórios</h1>
+            <h1><svg class="ic" aria-hidden="true"><use href="img/icones.svg#grafico"/></svg> Gestão e Relatórios</h1>
             <button onclick="window.location.href='admin.html'" class="btn-logout">Voltar ao Painel</button>
         </header>
 
@@ -110,7 +111,7 @@
         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
         <div class="confirm-box"
             style="background:#2b1a10; padding:20px; border-radius:10px; border:1px solid #d4af37; width:90%; max-width:400px; text-align:center;">
-            <h3 style="color:#d4af37; margin-bottom:15px;">💰 Confirmar Pagamento</h3>
+            <h3 style="color:#d4af37; margin-bottom:15px;"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#dinheiro"/></svg> Confirmar Pagamento</h3>
             <p id="msg-pagamento" style="color:#fff; margin-bottom:20px;">Deseja confirmar o pagamento do cliente:
                 <br><strong id="nome-cliente-confirm"></strong>?</p>
     

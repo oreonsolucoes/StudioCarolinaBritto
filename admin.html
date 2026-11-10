@@ -57,7 +57,8 @@
         vertical-align: middle;
       }
     </style>
-  </head>
+    <link rel="stylesheet" href="css/icones.css">
+</head>
 
   <body id="admin-body" style="display: none;">
 
@@ -65,11 +66,9 @@
       <header>
         <h1>Painel Administrativo</h1>
         <div>
-          <button id="btn-gestao-fin" onclick="window.location.href='gestao.html'" class="btn-edit-ordem"
-  style="margin-right:10px; background:#d4af37; color:#1c110a;">📊 Gestão</button>
-<button id="btn-monitor" onclick="window.open('monitor.html','_blank')" class="btn-edit-ordem"
-  style="margin-right:10px; background:#6c3483; color:white;">📺 Monitor</button>
-<button id="logout" class="btn-logout">Sair</button>
+          <button id="btn-gestao-fin" onclick="window.location.href='gestao.html'" class="btn-topo btn-topo-cheio"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#grafico"/></svg> Gestão</button>
+<button id="btn-monitor" onclick="window.open('monitor.html','_blank')" class="btn-topo"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#monitor"/></svg> Monitor</button>
+<button id="logout" class="btn-topo"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#seta-dir"/></svg> Sair</button>
         </div>
       </header>
 
@@ -81,27 +80,27 @@
       <div id="sem-acesso" class="sem-acesso" style="display:none;"></div>
 
       <nav class="admin-nav">
-        <button id="btn-agendamentos" class="active">Agendamentos</button>
-        <button id="btn-bloqueio">Bloquear Horários</button>
-        <button id="btn-agendar-manual">Agendar Cliente</button>
-        <button id="btn-servicos">Serviços</button>
-        <button id="btn-horarios">🕐 Horários</button>
-        <button id="btn-recesso">Folga</button>
-        <button id="btn-clientes-bloq">Clientes Bloqueados</button>
-        <button id="btn-assinaturas">📋 Assinaturas <span class="badge-pendente" id="badge-pendente" style="display:none;">0</span></button>
-        <button id="btn-ger-planos">💈 Gerenciar Planos</button>
+        <button id="btn-agendamentos" class="active"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#calendario"/></svg> Agendamentos</button>
+        <button id="btn-bloqueio"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#cadeado"/></svg> Bloquear Horários</button>
+        <button id="btn-agendar-manual"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#editar"/></svg> Agendar Cliente</button>
+        <button id="btn-servicos"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#unha"/></svg> Serviços</button>
+        <button id="btn-horarios"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#relogio"/></svg> Horários</button>
+        <button id="btn-recesso"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#ferias"/></svg> Folga</button>
+        <button id="btn-clientes-bloq"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#proibido"/></svg> Clientes Bloqueados</button>
+        <button id="btn-assinaturas"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#lista"/></svg> Assinaturas <span class="badge-pendente" id="badge-pendente" style="display:none;">0</span></button>
+        <button id="btn-ger-planos"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#estrela"/></svg> Gerenciar Planos</button>
       </nav>
 
       <!-- SEÇÃO: AGENDAMENTOS -->
       <section id="sec-agendamentos">
-        <h2>📅 Agendamentos</h2>
+        <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#calendario"/></svg> Agendamentos</h2>
         <div class="admin-toolbar">
           <div class="filter-group">
             <label for="filtro-data">Data:</label>
             <input type="date" id="filtro-data">
           </div>
           <div class="filter-group">
-            <input type="text" id="pesquisa-cliente" placeholder="🔍 Buscar nome ou telefone...">
+            <input type="text" id="pesquisa-cliente" placeholder="Buscar nome ou telefone...">
           </div>
           <div class="switch-container">
             <span>Ocultar horários passados</span>
@@ -116,7 +115,7 @@
 
       <!-- SEÇÃO: BLOQUEIO -->
       <section id="sec-bloqueio" style="display:none;">
-        <h2>🔒 Gestão de Disponibilidade</h2>
+        <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#cadeado"/></svg> Gestão de Disponibilidade</h2>
         <p style="margin-bottom:15px;opacity:0.8;">Clique no horário para ocupar/bloquear (Almoço, Folga, etc.)</p>
         <div id="grade-bloqueio" class="grade-horarios"></div>
       </section>
@@ -124,17 +123,17 @@
       <!-- SEÇÃO: AGENDAMENTO MANUAL -->
       <section id="sec-agendar-manual" style="display:none;">
         <div class="manual-wrapper">
-          <h2>✍️ Agendamento Manual</h2>
+          <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#editar"/></svg> Agendamento Manual</h2>
           <div id="form-agendamento-manual"></div>
           <div class="form-agendamento-manual">
             <input type="text" id="manual-nome" placeholder="Nome do Cliente" required>
             <input type="tel" id="manual-whatsapp" value="5511900000000" placeholder="WhatsApp (somente números)" required>
             <div class="custom-select manual-select" id="manual-servico-select">
-              <div class="custom-select-trigger">💅 Selecione o serviço<span class="arrow">▾</span></div>
+              <div class="custom-select-trigger"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#unha"/></svg> Selecione o serviço<span class="arrow"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#baixo"/></svg></span></div>
               <div class="custom-options" id="manual-servico-options"></div>
             </div>
             <div class="custom-select manual-select" id="manual-pagamento-select" data-valor="digital">
-              <div class="custom-select-trigger">💳 Pagamento Digital<span class="arrow">▾</span></div>
+              <div class="custom-select-trigger"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#cartao"/></svg> Pagamento Digital<span class="arrow"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#baixo"/></svg></span></div>
               <div class="custom-options">
                 <div class="custom-option" data-value="digital">Pagamento Digital</div>
                 <div class="custom-option" data-value="dinheiro">Pagamento em Dinheiro</div>
@@ -153,7 +152,7 @@
 
       <!-- SEÇÃO: SERVIÇOS -->
       <section id="sec-servicos" style="display:none;">
-        <h2>💈 Serviços</h2>
+        <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#unha"/></svg> Serviços</h2>
         <form id="form-servico" class="form-servico">
           <input type="text" id="serv-nome" placeholder="Nome do serviço" required>
           <input type="number" id="serv-preco" placeholder="Preço (R$)" required>
@@ -166,7 +165,7 @@
 
       <!-- SEÇÃO: HORÁRIOS DE ATENDIMENTO -->
       <section id="sec-horarios" style="display:none;">
-        <h2>🕐 Horários de Atendimento</h2>
+        <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#relogio"/></svg> Horários de Atendimento</h2>
         <p style="opacity:.75; margin-bottom:20px; font-size:14px;">
           Configure o horário de início e fim para cada dia da semana.
           Desative os dias em que o Studio estará fechado.
@@ -175,16 +174,16 @@
         <div id="tabela-horarios" class="horarios-table"></div>
       
         <button id="btn-salvar-horarios" class="btn-save" style="margin-top:24px;">
-          💾 Salvar Horários
+          <svg class="ic" aria-hidden="true"><use href="img/icones.svg#salvar"/></svg> Salvar Horários
         </button>
         <p id="msg-horarios-salvo" style="display:none; color:#4caf50; margin-top:10px; font-weight:500;">
-          ✅ Horários salvos com sucesso!
+          <svg class="ic" aria-hidden="true"><use href="img/icones.svg#ok"/></svg> Horários salvos com sucesso!
         </p>
       </section>
 
       <!-- SEÇÃO: RECESSO -->
       <section id="sec-recesso" style="display:none;">
-        <h2 style="color:#d4af37;">🏝️ Configurar Folga/Feriado</h2>
+        <h2 style="color:#d4af37;"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#ferias"/></svg> Configurar Folga/Feriado</h2>
         <div class="admin-toolbar" style="display:block;">
           <p style="margin-bottom:15px;font-size:14px;color:#ccc;">Defina um período em que o Studio estará fechado. O cliente verá um aviso e não conseguirá agendar.</p>
           <div style="display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
@@ -215,7 +214,7 @@
            SEÇÃO: ASSINATURAS PENDENTES (NOVA)
            ═══════════════════════════════════════════ -->
       <section id="sec-assinaturas" style="display:none;">
-        <h2>📋 Assinaturas de Planos</h2>
+        <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#lista"/></svg> Assinaturas de Planos</h2>
         <p style="opacity:.75;font-size:14px;margin-bottom:20px;">
           Gerencie os clientes que solicitaram um plano mensal.<br>
           Confirme o pagamento antes de aprovar.
@@ -227,7 +226,7 @@
            SEÇÃO: GERENCIAR PLANOS (NOVA)
            ═══════════════════════════════════════════ -->
       <section id="sec-ger-planos" style="display:none;">
-        <h2>💈 Gerenciar Planos Mensais</h2>
+        <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#estrela"/></svg> Gerenciar Planos Mensais</h2>
         <p style="opacity:.75;font-size:14px;margin-bottom:20px;">
           Crie, edite e exclua os planos que aparecem na página de assinaturas.
         </p>
@@ -280,7 +279,7 @@
           </div>
 
           <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
-            <button class="btn-form-plano salvar" id="btn-salvar-plano">💾 Salvar Plano</button>
+            <button class="btn-form-plano salvar" id="btn-salvar-plano"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#salvar"/></svg> Salvar Plano</button>
             <button class="btn-form-plano cancelar" id="btn-cancelar-plano">Cancelar</button>
           </div>
         </div>
@@ -310,7 +309,7 @@
     <!-- MODAL: NOTIFICAÇÃO NOVO AGENDAMENTO -->
     <div id="modal-notificacao" class="modal-notificacao" style="display:none;">
       <div class="modal-content">
-        <h3>🔔 Novo Agendamento!</h3>
+        <h3><svg class="ic" aria-hidden="true"><use href="img/icones.svg#sino"/></svg> Novo Agendamento!</h3>
         <div class="notificacao-corpo">
           <p><strong>Cliente:</strong> <span id="notif-cliente">---</span></p>
           <p><strong>Serviço:</strong> <span id="notif-servico">---</span></p>
@@ -325,7 +324,7 @@
     <div id="modal-confirmar-pagamento" class="confirm-overlay"
       style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;justify-content:center;align-items:center;">
       <div class="confirm-box" style="background:#2b1a10;padding:20px;border-radius:10px;border:1px solid var(--dourado);width:90%;max-width:400px;text-align:center;">
-        <h3 style="color:var(--dourado);margin-bottom:15px;">💰 Confirmar Pagamento</h3>
+        <h3 style="color:var(--dourado);margin-bottom:15px;"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#dinheiro"/></svg> Confirmar Pagamento</h3>
         <p style="color:#fff;margin-bottom:20px;">Confirmar pagamento de:<br><strong id="nome-cliente-confirm"></strong></p>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <button id="btn-pago-digital" style="background:#4db8ff;color:white;border:none;padding:12px;border-radius:5px;cursor:pointer;font-weight:bold;">Confirmar como DIGITAL</button>

@@ -9,8 +9,8 @@ export const PLANOS_ATIVOS = false;
 // "cabelo" é a segunda agenda: mesmos nós do Firebase com sufixo "_cabelo".
 export const AGENDA_PADRAO = 'unhas';
 export const AGENDAS = {
-  unhas:  { id: 'unhas',  nome: 'Unhas',  icone: '💅', sufixo: ''        },
-  cabelo: { id: 'cabelo', nome: 'Cabelo', icone: '💇‍♀️', sufixo: '_cabelo' }
+  unhas:  { id: 'unhas',  nome: 'Unhas',  icone: 'unha', sufixo: ''        },
+  cabelo: { id: 'cabelo', nome: 'Cabelo', icone: 'cabelo', sufixo: '_cabelo' }
 };
 
 // ── PAPÉIS ──────────────────────────────────────────────────

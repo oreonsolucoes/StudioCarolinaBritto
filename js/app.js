@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { PLANOS_ATIVOS, AGENDAS, LACUNA_MAXIMA_MIN } from "./config.js";
+import { ic } from "./icones.js";
 import { gravarAgendamento, removerAgendamento } from "./espelhos.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, horariosSugeridos } from "./agendas.js";
 
@@ -17,7 +18,7 @@ const AGENDA_ATUAL = AGENDA_ID || 'unhas';
         if (escolha) escolha.style.display = 'none';
         if (form) form.style.display = '';
         const nome = document.getElementById('nome-agenda-atual');
-        if (nome) nome.textContent = `${AGENDAS[AGENDA_ID].icone} ${AGENDAS[AGENDA_ID].nome}`;
+        if (nome) nome.innerHTML = `${ic(AGENDAS[AGENDA_ID].icone)} ${AGENDAS[AGENDA_ID].nome}`;
     }
 })();
 
@@ -124,13 +125,13 @@ function renderizarSelectServicos(plano = null) {
                     if (restam > 0) {
                         const opt = document.createElement('option');
                         opt.value = `__flex__${key}`;
-                        opt.textContent = `⭐ ${sf.nome} — ${proximo} uso (${restam} restante${restam > 1 ? 's' : ''})`;
+                        opt.textContent = `${sf.nome} — ${proximo} uso (${restam} restante${restam > 1 ? 's' : ''})`;
                         opt.style.fontWeight = 'bold';
                         sel.appendChild(opt);
                     } else {
                         const opt = document.createElement('option');
                         opt.disabled = true;
-                        opt.textContent = `⛔ ${sf.nome} — esgotado neste ciclo`;
+                        opt.textContent = `${sf.nome} — esgotado neste ciclo`;
                         sel.appendChild(opt);
                     }
                 });
@@ -148,13 +149,13 @@ function renderizarSelectServicos(plano = null) {
                     const ordinal = ['1º', '2º', '3º', '4º'][usos] || `${usos + 1}º`;
                     const opt = document.createElement('option');
                     opt.value = '__plano__';
-                    opt.textContent = `⭐ ${plano.planoNome} — ${ordinal} atendimento (incluso)`;
+                    opt.textContent = `${plano.planoNome} — ${ordinal} atendimento (incluso)`;
                     opt.style.fontWeight = 'bold';
                     sel.appendChild(opt);
                 } else {
                     const opt = document.createElement('option');
                     opt.disabled = true;
-                    opt.textContent = `⚠️ Usos do plano esgotados neste ciclo — use os serviços avulsos`;
+                    opt.textContent = `Usos do plano esgotados neste ciclo — use os serviços avulsos`;
                     sel.appendChild(opt);
                 }
                 const sep = document.createElement('option');
@@ -190,11 +191,11 @@ function exibirBannerPlano(bloco, ass) {
 
     if (ass.isFlex && ass.servicosFlex) {
         // Banner Flex: mostra contador individual de cada serviço
-        let html = `⭐ <strong>${ass.planoNome}</strong> ativo!<br>`;
+        let html = `${ic('estrela')} <strong>${ass.planoNome}</strong> ativo!<br>`;
         Object.entries(ass.servicosFlex).forEach(([key, sf]) => {
             const usos = (ass.usosFlexNoMes?.[periodoAtual]?.[key]) || 0;
             const max = sf.maxUsos || 2;
-            const emoji = usos < max ? '✅' : '⛔';
+            const emoji = usos < max ? ic('ok') : ic('proibido');
             html += `${emoji} ${sf.nome}: <strong>${usos}/${max}</strong> usos<br>`;
         });
         banner.innerHTML = html;
@@ -203,9 +204,9 @@ function exibirBannerPlano(bloco, ass) {
         const usos = (ass.usosNoMes?.[periodoAtual]) || 0;
         const max = ass.maxUsosMes || 4;
         banner.innerHTML = `
-      ⭐ <strong>${ass.planoNome}</strong> ativo!
+      ${ic('estrela')} <strong>${ass.planoNome}</strong> ativo!
       Usos neste ciclo: <strong>${usos}/${max}</strong>
-      ${usos >= max ? '<br>⚠️ Usos esgotados — apenas serviços avulsos disponíveis.' : ''}
+      ${usos >= max ? `<br>${ic('alerta')} Usos esgotados — apenas serviços avulsos disponíveis.` : ''}
     `;
     }
 
@@ -393,7 +394,7 @@ async function verificarRecesso(dataSelecionada, bloco) {
 
     overlay.innerHTML = `
       <div style="background:rgba(38,24,15,0.98);border:2px solid #d4af37;border-radius:20px;padding:40px 30px;max-width:450px;text-align:center;color:white;box-shadow:0 15px 50px rgba(0,0,0,1);">
-        <div style="font-size:50px;">🏖️</div>
+        <div style="font-size:44px;color:#d4af37;">${ic('ferias','ic-xl')}</div>
         <h2 style="color:#d4af37;margin:15px 0;font-family:'Cinzel Decorative',serif;">Pausa para Descanso</h2>
         <p style="color:#eee;margin-bottom:20px;">Informamos que nesta data estaremos fechados para repor as energias.</p>
         <div style="background:rgba(212,175,55,0.1);padding:15px;border-radius:10px;border:1px dashed #d4af37;margin-bottom:20px;">
@@ -531,7 +532,7 @@ btnConfirmarTudo.onclick = async (e) => {
     const whatsappNum = campoWhats.value.replace(/\D/g, '');
 
     if (whatsappNum.length < 10) {
-        alert("⚠️ WhatsApp incompleto. Digite com DDD. Ex: (11) 99999-8888");
+        alert("WhatsApp incompleto. Digite com DDD. Ex: (11) 99999-8888");
         campoWhats.focus(); return;
     }
 

@@ -1,3 +1,4 @@
+import { ic } from "./icones.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
@@ -34,7 +35,7 @@ if (toggleSenha && senhaInput) {
   toggleSenha.onclick = () => {
     const type = senhaInput.type === "password" ? "text" : "password";
     senhaInput.type = type;
-    toggleSenha.textContent = type === "password" ? "👁️" : "🙈";
+    toggleSenha.innerHTML = type === "password" ? ic("olho") : ic("olho-off");
   };
 }
 
@@ -57,7 +58,7 @@ if (loginForm) {
       })
       .catch((error) => {
         console.error(error);
-        if (erroLogin) erroLogin.textContent = "❌ E-mail ou senha inválidos.";
+        if (erroLogin) erroLogin.textContent = "E-mail ou senha inválidos.";
       })
       .finally(() => {
         if (btn) {

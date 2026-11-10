@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 import { PLANOS_ATIVOS, AGENDAS, AGENDA_PADRAO, PERMISSOES } from "./config.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, agendasPermitidas, podeAgenda, podeFinanceiro } from "./agendas.js";
 import { carregarPerfil } from "./sessao.js";
+import { ic } from "./icones.js";
 import { gravarAgendamento, removerAgendamento, novoId, atualizarDuracaoEspelho } from "./espelhos.js";
 
 // Agenda em edição e perfil do usuário (definidos após o login).
@@ -96,7 +97,7 @@ function montarBarraAgenda(permitidas) {
   const sel = document.getElementById('select-agenda');
   const rot = document.getElementById('rotulo-papel');
   if (!barra || !sel) return;
-  sel.innerHTML = permitidas.map(id => `<option value="${id}" ${id === AGENDA ? 'selected' : ''}>${AGENDAS[id].icone} ${AGENDAS[id].nome}</option>`).join('');
+  sel.innerHTML = permitidas.map(id => `<option value="${id}" ${id === AGENDA ? 'selected' : ''}>${AGENDAS[id].nome}</option>`).join('');
   if (rot) rot.textContent = PERMISSOES[PERFIL.papel].nome;
   barra.style.display = 'flex';
   sel.onchange = () => { localStorage.setItem('agendaAdmin', sel.value); location.reload(); };
@@ -137,7 +138,7 @@ document.addEventListener('click', liberarAudio);
 const hojeISO = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
 if (filtroData) filtroData.value = hojeISO;
 
-// --- 1️⃣ NOTIFICAÇÕES EM TEMPO REAL ---
+// ---  NOTIFICAÇÕES EM TEMPO REAL ---
 let primeiraCarga = true;
 const agendamentosRef = ref(db, "agendamentos");
 
@@ -169,7 +170,7 @@ function exibirModalNovoAgendamento(ag) {
   setTimeout(() => { modal.style.display = 'none'; }, 60000);
 }
 
-// --- 2️⃣ AGENDAMENTOS ---
+// ---  AGENDAMENTOS ---
 function carregarAgendamentos() {
   onValue(agendamentosRef, (snapshot) => {
     if (!listaAgendamentos) return;
@@ -217,7 +218,7 @@ function carregarAgendamentos() {
       const textoExibido = nomesPagamento[pagamentoAtual] || pagamentoAtual;
       const statusPendente = pagamentoAtual.toLowerCase() === "pendente";
       const botaoConfirmar = statusPendente
-        ? `<button onclick="window.confirmarPagamento('${id}','${ag.cliente}')" style="background:#2ecc71;border:none;color:white;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-top:8px;font-weight:bold;display:block;">✔️ Confirmar Recebimento</button>`
+        ? `<button onclick="window.confirmarPagamento('${id}','${ag.cliente}')" style="background:#2ecc71;border:none;color:white;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-top:8px;font-weight:bold;display:block;">${ic('ok')} Confirmar Recebimento</button>`
         : '';
 
       // Badge de plano
@@ -233,12 +234,12 @@ function carregarAgendamentos() {
             <button class="dropdown-btn-servico">${nomeServico}</button>
             <div class="dropdown-menu-servico"></div>
           </div>
-          <button class="btn-editar-valor" data-id="${id}">✏️ Editar Valor</button>
+          <button class="btn-editar-valor" data-id="${id}">${ic('editar')} Editar Valor</button>
           <button class="btn-nao-compareceu" data-id="${id}" data-whats="${ag.whatsapp}">NÃO COMPARECEU</button>
         </div>
         <div class="btns-card">
           <div class="custom-select" data-id="${id}" data-valor="${pagamentoAtual}">
-            <div class="custom-select-trigger">💳 ${textoExibido}<span class="arrow">▾</span></div>
+            <div class="custom-select-trigger">${ic('cartao')} ${textoExibido}<span class="arrow">${ic('baixo')}</span></div>
             <div class="custom-options">
               <div class="custom-option" data-value="digital">Pagamento Digital</div>
               <div class="custom-option" data-value="dinheiro">Pagamento em Dinheiro</div>
@@ -292,7 +293,7 @@ document.addEventListener("click", (e) => {
   });
 });
 
-// --- 3️⃣ MODAL DE CONFIRMAÇÃO ---
+// ---  MODAL DE CONFIRMAÇÃO ---
 function mostrarConfirmacao(titulo, mensagem, data, servico, acaoSim) {
   const overlay = document.getElementById('custom-confirm');
   if (!overlay) return;
@@ -308,7 +309,7 @@ function mostrarConfirmacao(titulo, mensagem, data, servico, acaoSim) {
   document.getElementById('confirm-no').onclick = () => { overlay.style.display = 'none'; };
 }
 
-// --- 4️⃣ GRADE DE BLOQUEIO ---
+// ---  GRADE DE BLOQUEIO ---
 function gerarGradeBloqueio() {
   const dataSelecionada = filtroData.value;
   if (!dataSelecionada) return;
@@ -352,7 +353,7 @@ function gerarGradeBloqueio() {
   }, { onlyOnce: true });
 }
 
-// --- 5️⃣ SERVIÇOS ---
+// ---  SERVIÇOS ---
 function carregarServicos() {
   onValue(ref(db, caminho("servicos", AGENDA)), (snapshot) => {
     if (!listaServicos) return;
@@ -367,9 +368,9 @@ function carregarServicos() {
         card.innerHTML = `
           <div><strong>${s.ordem||'?'}. ${s.nome}</strong><br><small>R$ ${s.preco} | ${s.duracao}min</small></div>
           <div class="btns-card">
-            <button class="btn-edit-ordem" title="Mudar Posição">🔢</button>
-            <button class="btn-edit-serv" title="Editar Preço">💰</button>
-            <button class="btn-del-serv" title="Excluir">🗑️</button>
+            <button class="btn-edit-ordem" title="Mudar Posição">${ic('ordem')}</button>
+            <button class="btn-edit-serv" title="Editar Preço">${ic('moedas')}</button>
+            <button class="btn-del-serv" title="Excluir">${ic('lixeira')}</button>
           </div>`;
         card.querySelector('.btn-del-serv').onclick = () => { if (confirm(`Excluir serviço ${s.nome}?`)) remove(ref(db, `${caminho("servicos", AGENDA)}/${id}`)); };
         card.querySelector('.btn-edit-serv').onclick = () => { const novoPreco = prompt(`Novo preço para ${s.nome}:`, s.preco); if (novoPreco) update(ref(db, `${caminho("servicos", AGENDA)}/${id}`), { preco: Number(novoPreco) }); };
@@ -380,7 +381,7 @@ function carregarServicos() {
   });
 }
 
-// --- 6️⃣ NAVEGAÇÃO ENTRE ABAS ---
+// ---  NAVEGAÇÃO ENTRE ABAS ---
 const btnTabAg          = document.getElementById('btn-agendamentos');
 const btnTabServ        = document.getElementById('btn-servicos');
 const btnTabBloq        = document.getElementById('btn-bloqueio');
@@ -434,7 +435,7 @@ if (btnTabAssinaturas)  btnTabAssinaturas.onclick  = () => gerenciarAbas('assina
 if (btnTabGerPlanos)    btnTabGerPlanos.onclick    = () => gerenciarAbas('gerplanos');
 if (btnTabHorarios)     btnTabHorarios.onclick     = () => gerenciarAbas('horarios');
 
-// --- 7️⃣ RECESSO ---
+// ---  RECESSO ---
 const btnSalvarRecesso  = document.getElementById('btn-salvar-recesso');
 const btnRemoverRecesso = document.getElementById('btn-remover-recesso');
 const boxStatusRecesso  = document.getElementById('status-recesso-box');
@@ -467,7 +468,7 @@ onValue(ref(db, caminhoRecesso(AGENDA)), (snapshot) => {
 });
 }
 
-// --- 7️⃣-B HORÁRIOS DE ATENDIMENTO (editor por dia da semana) ---
+// --- -B HORÁRIOS DE ATENDIMENTO (editor por dia da semana) ---
 const DIAS_SEMANA = [
   { key: 'dom', label: 'Domingo' },
   { key: 'seg', label: 'Segunda-feira' },
@@ -557,7 +558,7 @@ document.getElementById('btn-salvar-horarios')?.addEventListener('click', () => 
   });
 });
 
-// --- 8️⃣ FORM SERVIÇOS E FILTROS ---
+// ---  FORM SERVIÇOS E FILTROS ---
 if (formServico) formServico.onsubmit = (e) => {
   e.preventDefault();
   push(ref(db, caminho('servicos', AGENDA)), {
@@ -599,7 +600,7 @@ function carregarFormularioManual() {
     opt.innerText = `${s.nome} — R$ ${s.preco}`;
     manualServicoOptions.appendChild(opt);
   });
-  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `💅 Selecione o serviço <span class="arrow">▾</span>`;
+  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `${ic('unha')} Selecione o serviço <span class="arrow">${ic('baixo')}</span>`;
 }
 
 function paraMinutos(hora) {
@@ -668,7 +669,7 @@ btnSalvarManual.onclick = async () => {
   await enviarParaWebhook(novoAgendamento);
   alert("Agendamento criado com sucesso!");
   manualNome.value = ""; manualWhats.value = ""; manualServicoSelecionado = null;
-  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `💅 Selecione o serviço <span class="arrow">▾</span>`;
+  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `${ic('unha')} Selecione o serviço <span class="arrow">${ic('baixo')}</span>`;
   manualData.value = ""; manualGrid.innerHTML = "";
 };
 
@@ -689,7 +690,7 @@ document.addEventListener('click', (e) => {
   if (!select.dataset.id) return;
   const agendamentoId = select.dataset.id;
   const valor = option.dataset.value;
-  select.querySelector('.custom-select-trigger').innerHTML = `💳 ${option.innerText} <span class="arrow">▾</span>`;
+  select.querySelector('.custom-select-trigger').innerHTML = `${ic('cartao')} ${option.innerText} <span class="arrow">${ic('baixo')}</span>`;
   select.classList.remove('open');
   update(ref(db, `agendamentos/${agendamentoId}`), { formaPagamento: valor });
 });
@@ -699,7 +700,7 @@ document.addEventListener('click', (e) => {
   if (!option) return;
   manualServicoSelecionado = option.dataset.value;
   const serv = servicosDisponiveis[manualServicoSelecionado];
-  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `💅 ${serv.nome} <span class="arrow">▾</span>`;
+  manualServicoSelect.querySelector('.custom-select-trigger').innerHTML = `${ic('unha')} ${serv.nome} <span class="arrow">${ic('baixo')}</span>`;
   manualServicoSelect.classList.remove('open');
   gerarHorariosManuais();
 });
@@ -708,7 +709,7 @@ document.addEventListener('click', (e) => {
   const option = e.target.closest('#manual-pagamento-select .custom-option');
   if (!option) return;
   manualPagamentoValor = option.dataset.value;
-  manualPagamentoSelect.querySelector('.custom-select-trigger').innerHTML = `💳 ${option.innerText} <span class="arrow">▾</span>`;
+  manualPagamentoSelect.querySelector('.custom-select-trigger').innerHTML = `${ic('cartao')} ${option.innerText} <span class="arrow">${ic('baixo')}</span>`;
   manualPagamentoSelect.classList.remove('open');
 });
 
@@ -778,7 +779,7 @@ function carregarClientesBloqueados() {
 window.desbloquearCliente = function(telefone) { remove(ref(db, `clientesBloqueados/${telefone}`)); };
 
 // ═══════════════════════════════════════════════════════════
-// --- 9️⃣ ASSINATURAS PENDENTES (NOVA ABA) ---
+// ---  ASSINATURAS PENDENTES (NOVA ABA) ---
 // ═══════════════════════════════════════════════════════════
 function carregarAssinaturasPendentes() {
   const lista = document.getElementById('lista-assinaturas-pendentes');
@@ -798,7 +799,7 @@ function carregarAssinaturasPendentes() {
     lista_arr.forEach(([tel, ass]) => {
       const card = document.createElement('div');
       const statusColor = ass.status === 'ativo' ? '#2ecc71' : ass.status === 'pendente' ? '#f39c12' : '#e74c3c';
-      const statusLabel = ass.status === 'ativo' ? '✅ Ativo' : ass.status === 'pendente' ? '⏳ Pendente' : '❌ Inativo';
+      const statusLabel = ass.status === 'ativo' ? 'Ativo' : ass.status === 'pendente' ? 'Pendente' : 'Inativo';
       const criado = ass.criadoEm ? new Date(ass.criadoEm).toLocaleDateString('pt-BR') : '—';
 
       // Contagem de usos no ciclo atual (baseado na data de aprovação)
@@ -825,24 +826,24 @@ function carregarAssinaturasPendentes() {
           <div>
             <strong style="color:#fff;font-size:1rem;">${ass.nome || '—'}</strong>
             <span style="font-size:11px;background:${statusColor};color:#000;padding:2px 8px;border-radius:10px;margin-left:8px;font-weight:bold;">${statusLabel}</span><br>
-            <small style="color:#aaa;">📞 ${tel} | Plano: <strong style="color:var(--dourado);">${ass.planoNome || '—'}</strong></small><br>
+            <small style="color:#aaa;">${ic('telefone')} ${tel} | Plano: <strong style="color:var(--dourado);">${ass.planoNome || '—'}</strong></small><br>
             <small style="color:#888;">Cadastrado: ${criado} | Usos neste ciclo: ${usosTexto}</small><br>
             ${ass.adicionais && ass.adicionais.length ? `<small style="color:#aaa;">Adicionais: ${ass.adicionais.join(', ')}</small>` : ''}
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;min-width:130px;">
             ${ass.status === 'pendente' ? `
-              <button onclick="aprovarAssinatura('${tel}')" style="background:#2ecc71;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">✅ Aprovar</button>
-              <button onclick="rejeitarAssinatura('${tel}')" style="background:#e74c3c;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">❌ Rejeitar</button>
+              <button onclick="aprovarAssinatura('${tel}')" style="background:#2ecc71;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">${ic('ok')} Aprovar</button>
+              <button onclick="rejeitarAssinatura('${tel}')" style="background:#e74c3c;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">${ic('fechar')} Rejeitar</button>
             ` : ''}
             ${ass.status === 'ativo' ? `
-              <button onclick="inativarAssinatura('${tel}')" style="background:#e67e22;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">⏸ Inativar</button>
-              <button onclick="ativarAssinatura('${tel}')" style="background:#3498db;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">🔄 Renovar mês</button>
+              <button onclick="inativarAssinatura('${tel}')" style="background:#e67e22;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">${ic('pausa')} Inativar</button>
+              <button onclick="ativarAssinatura('${tel}')" style="background:#3498db;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">${ic('atualizar')} Renovar mês</button>
             ` : ''}
             ${ass.status === 'inativo' ? `
-              <button onclick="ativarAssinatura('${tel}')" style="background:#2ecc71;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">▶ Reativar</button>
+              <button onclick="ativarAssinatura('${tel}')" style="background:#2ecc71;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;">${ic('play')} Reativar</button>
             ` : ''}
-            <button onclick="editarUsosAssinatura('${tel}')" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;">✏️ Editar Usos</button>
-            <button onclick="excluirAssinatura('${tel}')" style="background:transparent;border:1px solid #555;color:#888;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;">🗑 Excluir</button>
+            <button onclick="editarUsosAssinatura('${tel}')" style="background:transparent;border:1px solid var(--dourado);color:var(--dourado);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;">${ic('editar')} Editar Usos</button>
+            <button onclick="excluirAssinatura('${tel}')" style="background:transparent;border:1px solid #555;color:#888;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;">${ic('lixeira')} Excluir</button>
           </div>
         </div>`;
       lista.appendChild(card);
@@ -893,11 +894,11 @@ window.editarUsosAssinatura = async function(tel) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
   modal.innerHTML = `
     <div style="background:#2b1a10;border:1px solid var(--dourado);border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
-      <h3 style="color:var(--dourado);margin:0 0 4px;">✏️ Editar Usos</h3>
+      <h3 style="color:var(--dourado);margin:0 0 4px;">${ic('editar')} Editar Usos</h3>
       <p style="color:#aaa;font-size:13px;margin:0 0 16px;">${ass.nome || tel} · Ciclo: ${periodoAtual}</p>
       ${camposUsos}
       <div style="display:flex;gap:10px;margin-top:8px;">
-        <button id="btn-salvar-usos" style="flex:1;background:var(--dourado);border:none;color:#000;padding:10px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">💾 Salvar</button>
+        <button id="btn-salvar-usos" style="flex:1;background:var(--dourado);border:none;color:#000;padding:10px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">${ic('salvar')} Salvar</button>
         <button onclick="document.getElementById('modal-editar-usos').remove()" style="flex:1;background:transparent;border:1px solid #555;color:#aaa;padding:10px;border-radius:8px;cursor:pointer;font-size:14px;">Cancelar</button>
       </div>
     </div>`;
@@ -918,7 +919,7 @@ window.editarUsosAssinatura = async function(tel) {
       });
     }
     modal.remove();
-    alert('✅ Usos atualizados com sucesso!');
+    alert('Usos atualizados com sucesso!');
   };
 
   // Fecha ao clicar fora
@@ -962,7 +963,7 @@ window.excluirAssinatura = async function(tel) {
 };
 
 // ═══════════════════════════════════════════════════════════
-// --- 🔟 GERENCIAR PLANOS (NOVA ABA) ---
+// --- GERENCIAR PLANOS (NOVA ABA) ---
 // ═══════════════════════════════════════════════════════════
 let planosDisponiveis = {};
 let servicosParaPlanos = {};
@@ -998,8 +999,8 @@ function carregarGerenciarPlanos() {
             <small style="color:#888;">Benefícios: ${(plano.beneficios||[]).join('; ') || '—'}</small>
           </div>
           <div style="display:flex;gap:8px;">
-            <button onclick="editarPlano('${id}')" style="background:#3498db;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;">✏️ Editar</button>
-            <button onclick="excluirPlano('${id}')" style="background:#e74c3c;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;">🗑 Excluir</button>
+            <button onclick="editarPlano('${id}')" style="background:#3498db;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;">${ic('editar')} Editar</button>
+            <button onclick="excluirPlano('${id}')" style="background:#e74c3c;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;">${ic('lixeira')} Excluir</button>
           </div>
         </div>`;
       lista.appendChild(card);
