@@ -234,6 +234,7 @@
   main{transition:opacity .25s ease}
   main.trocando{opacity:0;transform:scale(.98)}
 </style>
+  <link rel="stylesheet" href="css/icones.css">
 </head>
 <body>
   <header>
@@ -302,13 +303,18 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { gravarAgendamento } from "./js/espelhos.js";
+import { carregarPerfil } from "./js/sessao.js";
+import { podeAgenda } from "./js/agendas.js";
 import { AGENDAS } from "./js/config.js";
+import { ic } from "./js/icones.js";
 import { caminho, agendaValida, agendaDoAgendamento } from "./js/agendas.js";
 
 // Agenda exibida: monitor.html?agenda=cabelo (padrão: unhas)
 const AGENDA = agendaValida(new URLSearchParams(location.search).get('agenda'));
 const _tit = document.querySelector('.marca h1');
-if (_tit) _tit.textContent = `Studio Carolina Britto · ${AGENDAS[AGENDA].icone} ${AGENDAS[AGENDA].nome}`;
+if (_tit) _tit.innerHTML = `Studio Carolina Britto <span class="sep-agenda">·</span> ${ic(AGENDAS[AGENDA].icone)} ${AGENDAS[AGENDA].nome}`;
 document.title = `Monitor ${AGENDAS[AGENDA].nome} — Studio Carolina Britto`;
 
 const firebaseConfig = {
@@ -366,7 +372,8 @@ onValue(ref(db, caminho('horarios_funcionamento', AGENDA)), (snap) => {
   render();
 }, (err) => console.error(err));
 
-// escuta o Firebase
+// escuta o Firebase (só depois do login: agendamentos é restrito à equipe)
+function ouvirAgendamentos(){
 onValue(ref(db, 'agendamentos'), (snap) => {
   marcarConexao(true);
   const dados = snap.val() || {};
@@ -379,6 +386,17 @@ onValue(ref(db, 'agendamentos'), (snap) => {
   agendamentosDia = doDia.filter(a => a.cliente !== 'BLOQUEADO');
   render();
 }, (err) => { console.error(err); marcarConexao(false); });
+}
+
+onAuthStateChanged(getAuth(app), async (user) => {
+  if (!user) {
+    location.href = 'login.html?next=' + encodeURIComponent('monitor.html?agenda=' + AGENDA);
+    return;
+  }
+  const perfil = await carregarPerfil(db, user.uid);
+  if (!podeAgenda(perfil, AGENDA)) { location.href = 'admin.html'; return; }
+  ouvirAgendamentos();
+});
 
 function marcarConexao(ok){
   const el = document.getElementById('conexao');
@@ -399,7 +417,7 @@ function render(){
   if (ativos.length === 0){
     painel.classList.add('vazio');
     if (eyebrow) eyebrow.innerHTML = '<span class="dot"></span> Encerrado';
-    document.getElementById('ag-hora').textContent = '✓';
+    document.getElementById('ag-hora').innerHTML = ic('ok');
     document.getElementById('ag-nome').textContent = 'Dia encerrado';
     document.getElementById('ag-servico').textContent = 'Nenhum atendimento restante';
     document.getElementById('ag-badge').style.display = 'none';
@@ -471,7 +489,7 @@ function render(){
     if (folga >= 10){
       const div = document.createElement('div');
       div.className = 'intervalo';
-      div.innerHTML = `<span>⏸ intervalo ${folga} min</span><span class="barra"></span><span>${paraHHMM(fimAnterior)}–${a.hora}</span>`;
+      div.innerHTML = `<span>${ic('pausa')} intervalo ${folga} min</span><span class="barra"></span><span>${paraHHMM(fimAnterior)}–${a.hora}</span>`;
       fila.appendChild(div);
     }
     const card = document.createElement('div');
@@ -620,7 +638,7 @@ window.confirmarAgendamentoRapido = async function(){
       formaPagamento: 'presencial', criadoPor: 'monitor',
       ehPlano: false, notificado: false, timestamp: Date.now()
     };
-    await set(novaRef, ag);
+    await gravarAgendamento(db, novaRef.key, ag);
     // dispara o webhook no mesmo formato do site
     try {
       await fetch('https://n8n.oreonsolucoes.dpdns.org/webhook/studio', {

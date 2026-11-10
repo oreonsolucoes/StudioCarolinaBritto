@@ -60,7 +60,7 @@ body {
 /* CABEÇALHO – ANIMAÇÃO DE TAREFA CONCLUÍDA */
 .icon-check {
     font-size: 3.6rem;
-    color: var(--verde);
+    color: var(--dourado, #d4af37);
     margin-bottom: 12px;
     position: relative;
     animation: checkSuccess 1.1s ease forwards;
@@ -239,3 +239,7 @@ footer {
         font-size: 1.5rem;
     }
 }
+
+.info-section h3, .resumo-box h3 { font-family: 'Cinzel Decorative', serif; letter-spacing: .04em; display:flex; align-items:center; gap:8px; }
+
+.fidelidade h3 { font-family: "Cinzel Decorative", serif; color: var(--dourado); letter-spacing: .04em; justify-content:center; display:flex; align-items:center; gap:8px; }

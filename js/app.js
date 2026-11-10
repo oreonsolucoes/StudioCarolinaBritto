@@ -1,6 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, update, set, get } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { PLANOS_ATIVOS, AGENDAS, LACUNA_MAXIMA_MIN } from "./config.js";
+import { ic } from "./icones.js";
+import { gravarAgendamento, removerAgendamento } from "./espelhos.js";
 import { caminho, caminhoRecesso, agendaDoAgendamento, horariosSugeridos } from "./agendas.js";
 
 // ── Agenda escolhida (?agenda=unhas|cabelo). Sem parâmetro: mostra a tela de escolha. ──
@@ -16,7 +18,7 @@ const AGENDA_ATUAL = AGENDA_ID || 'unhas';
         if (escolha) escolha.style.display = 'none';
         if (form) form.style.display = '';
         const nome = document.getElementById('nome-agenda-atual');
-        if (nome) nome.textContent = `${AGENDAS[AGENDA_ID].icone} ${AGENDAS[AGENDA_ID].nome}`;
+        if (nome) nome.innerHTML = `${ic(AGENDAS[AGENDA_ID].icone)} ${AGENDAS[AGENDA_ID].nome}`;
     }
 })();
 
@@ -123,13 +125,13 @@ function renderizarSelectServicos(plano = null) {
                     if (restam > 0) {
                         const opt = document.createElement('option');
                         opt.value = `__flex__${key}`;
-                        opt.textContent = `⭐ ${sf.nome} — ${proximo} uso (${restam} restante${restam > 1 ? 's' : ''})`;
+                        opt.textContent = `${sf.nome} — ${proximo} uso (${restam} restante${restam > 1 ? 's' : ''})`;
                         opt.style.fontWeight = 'bold';
                         sel.appendChild(opt);
                     } else {
                         const opt = document.createElement('option');
                         opt.disabled = true;
-                        opt.textContent = `⛔ ${sf.nome} — esgotado neste ciclo`;
+                        opt.textContent = `${sf.nome} — esgotado neste ciclo`;
                         sel.appendChild(opt);
                     }
                 });
@@ -147,13 +149,13 @@ function renderizarSelectServicos(plano = null) {
                     const ordinal = ['1º', '2º', '3º', '4º'][usos] || `${usos + 1}º`;
                     const opt = document.createElement('option');
                     opt.value = '__plano__';
-                    opt.textContent = `⭐ ${plano.planoNome} — ${ordinal} atendimento (incluso)`;
+                    opt.textContent = `${plano.planoNome} — ${ordinal} atendimento (incluso)`;
                     opt.style.fontWeight = 'bold';
                     sel.appendChild(opt);
                 } else {
                     const opt = document.createElement('option');
                     opt.disabled = true;
-                    opt.textContent = `⚠️ Usos do plano esgotados neste ciclo — use os serviços avulsos`;
+                    opt.textContent = `Usos do plano esgotados neste ciclo — use os serviços avulsos`;
                     sel.appendChild(opt);
                 }
                 const sep = document.createElement('option');
@@ -189,11 +191,11 @@ function exibirBannerPlano(bloco, ass) {
 
     if (ass.isFlex && ass.servicosFlex) {
         // Banner Flex: mostra contador individual de cada serviço
-        let html = `⭐ <strong>${ass.planoNome}</strong> ativo!<br>`;
+        let html = `${ic('estrela')} <strong>${ass.planoNome}</strong> ativo!<br>`;
         Object.entries(ass.servicosFlex).forEach(([key, sf]) => {
             const usos = (ass.usosFlexNoMes?.[periodoAtual]?.[key]) || 0;
             const max = sf.maxUsos || 2;
-            const emoji = usos < max ? '✅' : '⛔';
+            const emoji = usos < max ? ic('ok') : ic('proibido');
             html += `${emoji} ${sf.nome}: <strong>${usos}/${max}</strong> usos<br>`;
         });
         banner.innerHTML = html;
@@ -202,9 +204,9 @@ function exibirBannerPlano(bloco, ass) {
         const usos = (ass.usosNoMes?.[periodoAtual]) || 0;
         const max = ass.maxUsosMes || 4;
         banner.innerHTML = `
-      ⭐ <strong>${ass.planoNome}</strong> ativo!
+      ${ic('estrela')} <strong>${ass.planoNome}</strong> ativo!
       Usos neste ciclo: <strong>${usos}/${max}</strong>
-      ${usos >= max ? '<br>⚠️ Usos esgotados — apenas serviços avulsos disponíveis.' : ''}
+      ${usos >= max ? `<br>${ic('alerta')} Usos esgotados — apenas serviços avulsos disponíveis.` : ''}
     `;
     }
 
@@ -392,7 +394,7 @@ async function verificarRecesso(dataSelecionada, bloco) {
 
     overlay.innerHTML = `
       <div style="background:rgba(38,24,15,0.98);border:2px solid #d4af37;border-radius:20px;padding:40px 30px;max-width:450px;text-align:center;color:white;box-shadow:0 15px 50px rgba(0,0,0,1);">
-        <div style="font-size:50px;">🏖️</div>
+        <div style="font-size:44px;color:#d4af37;">${ic('ferias','ic-xl')}</div>
         <h2 style="color:#d4af37;margin:15px 0;font-family:'Cinzel Decorative',serif;">Pausa para Descanso</h2>
         <p style="color:#eee;margin-bottom:20px;">Informamos que nesta data estaremos fechados para repor as energias.</p>
         <div style="background:rgba(212,175,55,0.1);padding:15px;border-radius:10px;border:1px dashed #d4af37;margin-bottom:20px;">
@@ -459,8 +461,9 @@ async function gerarHorarios(bloco) {
     const ehHoje = dataAg === agora.toLocaleDateString('en-CA');
     const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
-    onValue(ref(db, 'agendamentos'), (snapshot) => {
-        const ags = Object.values(snapshot.val() || {}).filter(a => a.data === dataAg && agendaDoAgendamento(a) === AGENDA_ATUAL);
+    // Lê só a ocupação do dia desta agenda (público, sem dados pessoais).
+    onValue(ref(db, `ocupacao/${AGENDA_ATUAL}/${dataAg}`), (snapshot) => {
+        const ags = Object.values(snapshot.val() || {});
         grid.innerHTML = "";
 
         const abertura = paraMinutos(config.inicio);
@@ -529,7 +532,7 @@ btnConfirmarTudo.onclick = async (e) => {
     const whatsappNum = campoWhats.value.replace(/\D/g, '');
 
     if (whatsappNum.length < 10) {
-        alert("⚠️ WhatsApp incompleto. Digite com DDD. Ex: (11) 99999-8888");
+        alert("WhatsApp incompleto. Digite com DDD. Ex: (11) 99999-8888");
         campoWhats.focus(); return;
     }
 
@@ -688,7 +691,7 @@ btnConfirmarTudo.onclick = async (e) => {
             data: ag.data.split('/').reverse().join('-'),
             notificado: false
         };
-        await set(novaRef, agParaFirebase);
+        await gravarAgendamento(db, novaRef.key, agParaFirebase);
         await enviarParaWebhook(agParaFirebase);
     }
 
@@ -704,19 +707,20 @@ btnAbrirGestao.onclick = () => {
 btnBuscarGestao.onclick = () => {
     const tel = document.getElementById('busca-tel-gestao').value.replace(/\D/g, '');
     if (!tel) return;
-    onValue(ref(db, 'agendamentos'), (snapshot) => {
+    // Busca pelo telefone no resumo público (a lista completa de agendamentos é restrita à equipe).
+    onValue(ref(db, `agendamentosPorTelefone/${tel}`), (snapshot) => {
         const ags = snapshot.val() || {};
         const resultado = document.getElementById('resultado-gestao');
         resultado.innerHTML = "";
         Object.entries(ags).forEach(([id, ag]) => {
-            if (ag.whatsapp === tel) {
+            if (ag && ag.data) {
                 const item = document.createElement('div');
                 item.className = 'item-gestao';
                 item.innerHTML = `
           <p><strong>${ag.data.split('-').reverse().join('/')} às ${ag.hora}</strong><br>${ag.servicoNome || ag.servico} <small>(${AGENDAS[agendaDoAgendamento(ag)].nome})</small></p>
           <div class="acoes-gestao">
-            <button class="btn-reagendar" onclick="window.processarAcao('${id}','reagendar','${ag.cliente}','${ag.whatsapp}')">Reagendar</button>
-            <button class="btn-desistir"  onclick="window.processarAcao('${id}','excluir')">Desistir</button>
+            <button class="btn-reagendar" onclick="window.processarAcao('${id}','reagendar','${ag.cliente}','${tel}','${ag.agendaId || 'unhas'}','${ag.data}')">Reagendar</button>
+            <button class="btn-desistir"  onclick="window.processarAcao('${id}','excluir','','${tel}','${ag.agendaId || 'unhas'}','${ag.data}')">Desistir</button>
           </div>`;
                 resultado.appendChild(item);
             }
@@ -724,8 +728,8 @@ btnBuscarGestao.onclick = () => {
     }, { onlyOnce: true });
 };
 
-window.processarAcao = (id, tipo, nome = '', whatsapp = '') => {
-    remove(ref(db, `agendamentos/${id}`)).then(() => {
+window.processarAcao = (id, tipo, nome = '', whatsapp = '', agendaId = 'unhas', data = '') => {
+    removerAgendamento(db, id, { agendaId, data, whatsapp }).then(() => {
         if (modalGestao) modalGestao.style.display = 'none';
         const mc = document.getElementById('modal-cancelamento');
         if (mc) {

@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebas
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 // ADICIONE ESTA IMPORTAÇÃO:
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { ic } from "./icones.js";
 import { carregarPerfil } from "./sessao.js";
 import { podeFinanceiro } from "./agendas.js";
 
@@ -156,11 +157,11 @@ btnFiltrar.onclick = () => {
                 if (ag.formaPagamento === 'pendente') badgeColor = "#ff4444"; // Vermelho
                 if (ag.formaPagamento === 'digital') badgeColor = "#4db8ff";  // Azul
 
-                // Lógica do Botão de Confirmação (Cereja do bolo 🍒)
+                // Lógica do Botão de Confirmação 
                 const botaoConfirmar = ag.formaPagamento === 'pendente'
                     ? `<button onclick="window.confirmarPagamento('${ag.id}', '${ag.cliente}')" 
                         style="background:#2ecc71; border:none; color:white; padding:6px 10px; border-radius:4px; cursor:pointer; font-size:11px; margin-top:8px; font-weight:bold; display:block;">
-                        ✔️ Confirmar Recebimento
+                        ${ic('ok')} Confirmar Recebimento
                        </button>`
                     : '';
 

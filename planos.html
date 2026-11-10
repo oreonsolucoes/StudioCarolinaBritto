@@ -36,7 +36,7 @@
     .plano-desc  { font-size:.85rem; opacity:.75; margin-bottom:14px; line-height:1.5; }
     .plano-beneficios { list-style:none; padding:0; margin:0 0 16px; }
     .plano-beneficios li { font-size:.85rem; padding:4px 0; opacity:.9; }
-    .plano-beneficios li::before { content:"✓ "; color:var(--dourado); font-weight:bold; }
+    .plano-beneficios li::before { content:"— "; color:var(--dourado); font-weight:bold; }
     .plano-preco {
       font-size:1.8rem; font-weight:700; color:#fff;
       margin-bottom:16px;
@@ -137,6 +137,7 @@
     import { PLANOS_ATIVOS } from "./js/config.js";
     if (!PLANOS_ATIVOS) location.replace("index.html");
   </script>
+  <link rel="stylesheet" href="css/icones.css">
 </head>
 <body>
   <div class="overlay"></div>
@@ -155,7 +156,7 @@
     <p style="text-align:center;opacity:.6;">Carregando planos...</p>
   </div>
 
-  <a href="index.html" class="voltar-link">← Voltar para agendamentos</a>
+  <a href="index.html" class="voltar-link"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#seta-esq"/></svg> Voltar para agendamentos</a>
 
   <!-- Modal de assinatura -->
   <div class="modal-plano" id="modal-assinatura">
@@ -184,7 +185,7 @@
 
       <!-- Pix box — aparece após preencher o form -->
       <div class="pix-box" id="pix-box">
-        <h3>💰 Pagamento via Pix</h3>
+        <h3><svg class="ic" aria-hidden="true"><use href="img/icones.svg#dinheiro"/></svg> Pagamento via Pix</h3>
         <p style="font-size:.8rem;opacity:.75;margin-bottom:8px;">
           Valor: <strong id="pix-valor-txt">—</strong>
         </p>
@@ -195,7 +196,7 @@
           Seu plano será ativado após confirmação manual pelo Studio.
         </p>
         <a id="btn-whats-comp" href="#" target="_blank" class="btn-whatsapp-comp">
-          📲 Enviar comprovante no WhatsApp
+          <svg class="ic" aria-hidden="true"><use href="img/icones.svg#celular"/></svg> Enviar comprovante no WhatsApp
         </a>
         <p style="font-size:.75rem;opacity:.6;margin-top:10px;">
           Seu cadastro já foi registrado como <strong>pendente</strong>.<br>
@@ -204,7 +205,7 @@
       </div>
 
       <div class="msg-sucesso" id="msg-sucesso">
-        ✅ Cadastro enviado! Aguarde a confirmação do Studio via WhatsApp.
+        <svg class="ic" aria-hidden="true"><use href="img/icones.svg#ok-circulo"/></svg> Cadastro enviado! Aguarde a confirmação do Studio via WhatsApp.
       </div>
 
       <button class="btn-fechar-modal" onclick="fecharModal()">Fechar</button>
@@ -377,7 +378,7 @@
     window.copiarChavePix = function(el) {
       navigator.clipboard.writeText(el.textContent.trim()).then(() => {
         const orig = el.textContent;
-        el.textContent = '✅ Copiado!';
+        el.textContent = 'Copiado!';
         setTimeout(() => el.textContent = orig, 2000);
       });
     };

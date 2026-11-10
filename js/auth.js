@@ -1,3 +1,4 @@
+import { ic } from "./icones.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
@@ -23,12 +24,18 @@ const erroLogin = document.getElementById("erro-login");
 const toggleSenha = document.getElementById("toggle-senha");
 const senhaInput = document.getElementById("senha");
 
+// Destino após o login: ?next=monitor.html?agenda=... (só páginas locais permitidas)
+function destinoPosLogin() {
+  const next = new URLSearchParams(location.search).get('next') || '';
+  return /^(monitor|admin)\.html(\?agenda=(unhas|cabelo))?$/.test(next) ? next : 'admin.html';
+}
+
 // --- FUNÇÃO MOSTRAR SENHA ---
 if (toggleSenha && senhaInput) {
   toggleSenha.onclick = () => {
     const type = senhaInput.type === "password" ? "text" : "password";
     senhaInput.type = type;
-    toggleSenha.textContent = type === "password" ? "👁️" : "🙈";
+    toggleSenha.innerHTML = type === "password" ? ic("olho") : ic("olho-off");
   };
 }
 
@@ -47,11 +54,11 @@ if (loginForm) {
 
     signInWithEmailAndPassword(auth, email, senha)
       .then(() => {
-        window.location.href = "admin.html";
+        window.location.href = destinoPosLogin();
       })
       .catch((error) => {
         console.error(error);
-        if (erroLogin) erroLogin.textContent = "❌ E-mail ou senha inválidos.";
+        if (erroLogin) erroLogin.textContent = "E-mail ou senha inválidos.";
       })
       .finally(() => {
         if (btn) {
@@ -69,7 +76,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     // SÓ redireciona para admin se ele estiver na página de login
     if (estaNaLogin) {
-      window.location.href = "admin.html";
+      window.location.href = destinoPosLogin();
     }
   } else {
     if (loginSection) loginSection.style.display = "flex";

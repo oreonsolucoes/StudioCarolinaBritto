@@ -1,0 +1,14 @@
+/* Ícones SVG (sprite img/icones.svg) — herdam a cor do texto */
+.ic { width:1.15em; height:1.15em; vertical-align:-0.2em; flex:none; display:inline-block; }
+.ic-lg { width:1.6em; height:1.6em; }
+.ic-xl { width:2.2em; height:2.2em; }
+button .ic, a .ic { pointer-events:none; }
+
+/* Ícones nos cabeçalhos, botões e cartões: dourado, traço fino */
+h1 .ic, h2 .ic, h3 .ic, .card-header-icon .ic, .escolha-icone .ic, .mapa-pin .ic, .ig-avatar .ic { color: var(--dourado, #d4af37); }
+.card-header-icon { display:inline-flex; align-items:center; }
+.escolha-icone { display:inline-flex; margin-bottom:6px; }
+.ig-avatar { display:flex; align-items:center; justify-content:center; }
+.btn-admin .ic { width:1.1rem; height:1.1rem; }
+.custom-select-trigger .arrow .ic { width:.9em; height:.9em; }
+.ig-avatar .ic { color:#fff; }

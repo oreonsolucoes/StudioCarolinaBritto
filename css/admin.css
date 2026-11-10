@@ -1008,3 +1008,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 .rotulo-papel { margin-left:auto; font-size:.8rem; opacity:.75; }
 .sem-acesso { margin:30px auto; max-width:520px; padding:20px; text-align:center; line-height:1.5;
   background:rgba(38,24,15,.88); border:1px solid var(--dourado); border-radius:12px; word-break:break-all; }
+
+/* ── Cabeçalho e títulos padronizados (marrom + dourado) ── */
+header > div { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+.btn-topo { display:inline-flex; align-items:center; gap:6px; background:transparent; color:var(--dourado);
+  border:1px solid var(--dourado); padding:7px 14px; border-radius:8px; cursor:pointer; font:500 .85rem 'Poppins',sans-serif; transition:.2s; }
+.btn-topo:hover { background:rgba(212,175,55,.12); }
+.btn-topo-cheio { background:var(--dourado); color:#1c110a; font-weight:600; }
+.btn-topo-cheio:hover { background:#e2c04a; }
+.admin-nav { flex-wrap:wrap; }
+.admin-nav button { display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+.admin-container h2 { font-family:'Cinzel Decorative', serif; color:var(--dourado); font-size:1.15rem; font-weight:700;
+  letter-spacing:.04em; display:flex; align-items:center; gap:10px; margin:0 0 14px; }
+.admin-container h2 .ic { width:1.2em; height:1.2em; }
