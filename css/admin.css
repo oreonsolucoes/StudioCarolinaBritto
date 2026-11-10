@@ -1021,3 +1021,18 @@ header > div { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; 
 .admin-container h2 { font-family:'Cinzel Decorative', serif; color:var(--dourado); font-size:1.15rem; font-weight:700;
   letter-spacing:.04em; display:flex; align-items:center; gap:10px; margin:0 0 14px; }
 .admin-container h2 .ic { width:1.2em; height:1.2em; }
+
+/* ── Aba Mensagem de Confirmação ── */
+.msg-ajuda { font-size:.88rem; color:#d8c9b0; line-height:1.5; margin-bottom:12px; }
+.msg-variaveis { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.msg-chip { background:transparent; color:var(--dourado); border:1px solid var(--dourado); border-radius:999px; padding:5px 12px;
+  font:500 .8rem 'Poppins',sans-serif; cursor:pointer; transition:.2s; }
+.msg-chip:hover { background:rgba(212,175,55,.15); }
+#msg-texto { width:100%; box-sizing:border-box; background:#1c110a; color:#f5e9d0; border:1px solid rgba(212,175,55,.5);
+  border-radius:10px; padding:12px; font:400 .95rem/1.5 'Poppins',sans-serif; resize:vertical; }
+.msg-contador { text-align:right; font-size:.75rem; opacity:.6; margin-top:4px; }
+.msg-sub { font-family:'Cinzel Decorative',serif; color:var(--dourado); font-size:.95rem; margin:14px 0 8px; }
+.msg-preview { white-space:pre-wrap; background:#2f3b2a; border:1px solid rgba(212,175,55,.25); color:#f2f2f2; border-radius:12px;
+  padding:12px 14px; font-size:.92rem; line-height:1.5; }
+.msg-botoes { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.msg-salva { margin-top:12px; color:var(--dourado); font-weight:600; }

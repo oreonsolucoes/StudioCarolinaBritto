@@ -32,6 +32,10 @@
       "recesso_cabelo": {
         ".read": true,
         ".write": "((auth != null && root.child('usuarios').child(auth.uid).child('papel').val() === 'admin') || (auth != null && root.child('usuarios').child(auth.uid).child('papel').val() === 'funcionaria' && root.child('usuarios').child(auth.uid).child('agendas').child('cabelo').val() === true))"
+      },
+      "mensagens": {
+        ".read": true,
+        ".write": "(auth != null && root.child('usuarios').child(auth.uid).child('papel').val() === 'admin')"
       }
     },
     "agendamentos": {

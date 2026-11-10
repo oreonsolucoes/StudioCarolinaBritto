@@ -85,6 +85,7 @@
         <button id="btn-agendar-manual"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#editar"/></svg> Agendar Cliente</button>
         <button id="btn-servicos"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#unha"/></svg> Serviços</button>
         <button id="btn-horarios"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#relogio"/></svg> Horários</button>
+        <button id="btn-mensagem"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#mensagem"/></svg> Mensagem</button>
         <button id="btn-recesso"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#ferias"/></svg> Folga</button>
         <button id="btn-clientes-bloq"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#proibido"/></svg> Clientes Bloqueados</button>
         <button id="btn-assinaturas"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#lista"/></svg> Assinaturas <span class="badge-pendente" id="badge-pendente" style="display:none;">0</span></button>
@@ -182,6 +183,25 @@
       </section>
 
       <!-- SEÇÃO: RECESSO -->
+      <!-- SEÇÃO: MENSAGEM DE CONFIRMAÇÃO -->
+      <section id="sec-mensagem" style="display:none;">
+        <h2><svg class="ic" aria-hidden="true"><use href="img/icones.svg#mensagem"/></svg> Mensagem de Confirmação</h2>
+        <div class="admin-toolbar" style="display:block;">
+          <p class="msg-ajuda">Texto enviado à cliente pelo WhatsApp quando ela agenda. Cada agenda tem a sua mensagem:
+            você está editando a de <strong id="msg-agenda-nome"></strong>. Toque em uma variável para inserir no texto.</p>
+          <div id="msg-variaveis" class="msg-variaveis"></div>
+          <textarea id="msg-texto" rows="10" maxlength="1200" spellcheck="true"></textarea>
+          <div class="msg-contador"><span id="msg-contador">0</span>/1200</div>
+          <h3 class="msg-sub">Como a cliente vai ver</h3>
+          <div id="msg-preview" class="msg-preview"></div>
+          <div class="msg-botoes">
+            <button id="btn-salvar-msg" class="btn-save"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#salvar"/></svg> Salvar mensagem</button>
+            <button id="btn-padrao-msg" class="btn-topo"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#atualizar"/></svg> Restaurar texto padrão</button>
+          </div>
+          <p id="msg-salva" class="msg-salva" style="display:none;"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#ok"/></svg> Mensagem salva!</p>
+        </div>
+      </section>
+
       <section id="sec-recesso" style="display:none;">
         <h2 style="color:#d4af37;"><svg class="ic" aria-hidden="true"><use href="img/icones.svg#ferias"/></svg> Configurar Folga/Feriado</h2>
         <div class="admin-toolbar" style="display:block;">
